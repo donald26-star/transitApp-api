@@ -110,6 +110,32 @@ const dossierSchema = new mongoose.Schema({
         observation: { type: String, trim: true }
     }],
 
+    // 5. FICHE OPÉRATRICE (ÉTAT DE CODAGE)
+    etat_codage: {
+        cours: { type: Number, default: 1 },
+        mode_paiement: { type: String, trim: true },
+        relation_acheteur_vendeur: { type: String, trim: true },
+        code_additionnel: { type: String, trim: true },
+        transfert: { type: String, trim: true },
+        bureau_douane: { type: String, trim: true }
+    },
+    articles: [{
+        nomenclature: { type: String, trim: true },
+        pb: { type: Number, default: 0 },
+        pn: { type: Number, default: 0 },
+        valeur_fob: { type: Number, default: 0 },
+        fret: { type: Number, default: 0 },
+        assurance: { type: Number, default: 0 },
+        valeur_caf: { type: Number, default: 0 }, // FOB + FRET + ASS
+        dd: { type: Number, default: 0 },
+        rsta: { type: Number, default: 0 },
+        pcs: { type: Number, default: 0 },
+        pcc: { type: Number, default: 0 },
+        tva: { type: Number, default: 0 },
+        autres_taxes: { type: Number, default: 0 },
+        total_taxes: { type: Number, default: 0 }
+    }],
+
     status: { 
         type: String, 
         required: true, 

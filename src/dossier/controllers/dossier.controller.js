@@ -1,4 +1,5 @@
 const { Dossier } = require('../models/dossier.model');
+const { RegimeDouanier } = require('../models/regime.model');
 const { createNotificationInternal } = require('../../notification/controllers/notification.controller');
 const { Administrateur } = require('../../admin/models/admin.model');
 
@@ -194,6 +195,85 @@ exports.deleteDossier = async (req, res) => {
             status: false,
             message: "Une erreur interne est survenue.",
             data: {}
+        });
+    }
+};
+// UPDATE OPERATION (FICHE OPÉRATRICE / ÉTAT DE CODAGE)
+exports.updateOperation = async (req, res) => {
+    try {
+        const { code_dossier, etat_codage, articles } = req.body;
+
+        const dossier = await Dossier.findOne({ code_dossier: code_dossier });
+        if (!dossier) {
+            return res.status(404).json({ 
+                status: false,
+                message: 'Dossier non trouvé.',
+                data: {}
+            });
+        }
+
+        // Mettre à jour l'état de codage
+        if (etat_codage) {
+            dossier.etat_codage = { ...dossier.etat_codage, ...etat_codage };
+        }
+
+        // Mettre à jour les articles et recalculer les totaux par article
+        if (articles && Array.isArray(articles)) {
+            const updatedArticles = articles.map(art => {
+                const valeur_caf = (Number(art.valeur_fob) || 0) + (Number(art.fret) || 0) + (Number(art.assurance) || 0);
+                const total_taxes = (Number(art.dd) || 0) + (Number(art.rsta) || 0) + (Number(art.pcs) || 0) + (Number(art.pcc) || 0) + (Number(art.tva) || 0) + (Number(art.autres_taxes) || 0);
+                
+                return {
+                    ...art,
+                    valeur_caf,
+                    total_taxes
+                };
+            });
+            dossier.articles = updatedArticles;
+
+            // Optionnel : Mettre à jour les totaux du dossier global si besoin
+            // (ex: mise à jour automatique de valeur_cfa basée sur le cours)
+            if (dossier.etat_codage?.cours) {
+                const total_fob_usd = updatedArticles.reduce((acc, art) => acc + (Number(art.valeur_fob) || 0), 0);
+                dossier.valeur = total_fob_usd;
+                dossier.valeur_cfa = total_fob_usd * dossier.etat_codage.cours;
+                
+                // Mettre à jour le poids total du dossier
+                dossier.poids_brut = updatedArticles.reduce((acc, art) => acc + (Number(art.pb) || 0), 0);
+                dossier.nb_colis = updatedArticles.reduce((acc, art) => acc + (Number(art.nb_colis) || 0), 0);
+            }
+        }
+
+        await dossier.save();
+
+        res.status(200).json({
+            status: true,
+            message: 'Fiche opératrice mise à jour avec succès.',
+            data: dossier.formatResponse(),
+        });
+    } catch (error) {
+        res.status(400).json({ 
+            status: false,
+            message: error.message || 'Une erreur interne est survenue.',
+            data: {}
+        });
+    }
+};
+
+// GET ALL REGIMES
+exports.getRegimes = async (req, res) => {
+    try {
+        const regimes = await RegimeDouanier.find({ status: '1' }).sort({ code: 1 });
+        res.status(200).json({
+            status: true,
+            message: 'Succès.',
+            data: regimes
+        });
+    } catch (error) {
+        res.status(500).json({ 
+            status: false,
+            message: error.message || 'Une erreur interne est survenue.',
+            data: []
         });
     }
 };

@@ -13,8 +13,8 @@ try {
         output += `- "${name}"\n`;
     });
     
-    // Find sheet containing "proforma" and "simple"
-    const targetName = workbook.SheetNames.find(n => n.toLowerCase().includes("proforma") && n.toLowerCase().includes("simple"));
+    // Find sheet containing "Fiche" and "Opératrice"
+    const targetName = workbook.SheetNames.find(n => n.toLowerCase().includes("fiche") && n.toLowerCase().includes("opératrice"));
     output += `\nCible identifiée : "${targetName}"\n`;
     
     if (targetName) {

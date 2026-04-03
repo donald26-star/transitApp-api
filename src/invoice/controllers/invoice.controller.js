@@ -27,18 +27,36 @@ exports.createFromDossier = async (req, res) => {
                 num_dossier: dossier.num_dossier,
                 client: dossier.client,
                 awb_bl: dossier.awb_bl,
-                colis: dossier.colis,
-                poids: dossier.poids,
-                description: dossier.description,
-                provenance: dossier.origine,
+                colis: dossier.nb_colis,
+                poids: dossier.poids_brut,
+                description: dossier.description_marchandise,
+                provenance: dossier.station_depart,
                 expediteur: dossier.expediteur,
                 incoterm: dossier.incoterm,
-                // On peut ajouter d'autres champs si besoin
+                regime_douanier: dossier.regime_douanier,
+                bureau_douane: dossier.etat_codage?.bureau_douane
             },
-            // Initialiser les sections avec 0 ou calculs par défaut
-            douaneTaxes: { dd: 0, rsta: 0, pcs: 0, pcc: 0, pua: 0, tva_douane: 0 },
-            debours: { agio: 0, gestion_credit: 0, passage_douane: 0 },
-            prestations: { frais_fixes: 15000, commission_gestion: 0 } // Exemple de fixe
+            // Initialiser les sections avec les données du dossier (Fiche Opératrice)
+            douaneTaxes: { 
+                dd: dossier.articles?.reduce((acc, a) => acc + (a.dd || 0), 0) || 0,
+                rsta: dossier.articles?.reduce((acc, a) => acc + (a.rsta || 0), 0) || 0,
+                pcs: dossier.articles?.reduce((acc, a) => acc + (a.pcs || 0), 0) || 0,
+                pcc: dossier.articles?.reduce((acc, a) => acc + (a.pcc || 0), 0) || 0,
+                pua: 0, 
+                tva_douane: dossier.articles?.reduce((acc, a) => acc + (a.tva || 0), 0) || 0 
+            },
+            debours: { 
+                agio: 0, 
+                gestion_credit: 0, 
+                passage_douane: 0,
+                // Automatisme : Ajouter une caution par défaut pour les régimes suspensifs
+                caution: ['D56', 'D18', '3000', '5000', '7000', 'S106'].includes(dossier.regime_douanier) ? 25000 : 0
+            },
+            prestations: { 
+                frais_fixes: 15000, 
+                commission_gestion: 0,
+                had: dossier.type_voie === 'aerienne' ? 10000 : 25000 // Automatisme voie
+            }
         };
 
         const invoice = new Invoice(invoiceData);
