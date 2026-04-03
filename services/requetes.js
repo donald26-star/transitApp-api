@@ -30,8 +30,8 @@ async function fetchOneValue(condition, valeur, collectionName) {
         // Rechercher un document avec la condition spécifiée
         const document = await Collection.findOne(condition, { projection: { [valeur]: 1 } });
 
-        // Retourner la valeur du champ spécifié
-        return document[valeur];
+        // Retourner la valeur du champ spécifié si le document existe
+        return document ? document[valeur] : null;
     } catch (error) {
         throw new Error(`Erreur lors de l'exécution de fetchOneValue : ${error.message}`);
     }

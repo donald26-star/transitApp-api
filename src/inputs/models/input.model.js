@@ -1,80 +1,119 @@
 const mongoose = require("mongoose");
 const { generateToken } = require("../../../utils/utils");
-const { fetchOneValue } = require("../../../services/requetes");
-
 
 const champSchema = new mongoose.Schema(
   {
+    // ─── Relation avec le menu (acl_menus) ───────────────────────────────────
     menu: {
-      type: String,
-      required: true,
-      trim: true,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "acl_menus",
+      required: [true, "Le menu est obligatoire."],
       validate: {
         validator: async function (value) {
-          // On vérifie si ce code_profile existe dans la collection acl_profiles
-          const profile = await mongoose.model('acl_menus').findOne({ code_menu: value, type: 'dynamique' });
-          return !!profile; // Retourne true si le profil existe, sinon false
+          // Vérifie que le menu existe et qu'il est de type 'dynamique'
+          const menu = await mongoose.model("acl_menus").findOne({
+            _id: value,
+            type: "dynamique",
+          });
+          return !!menu;
         },
-        message: props => `Accès refusé : Le code menu "${props.value}" est inexistant.`
-      }
+        message: (props) =>
+          `Accès refusé : Le menu "${props.value}" est inexistant ou n'est pas de type 'dynamique'.`,
+      },
     },
+
+    // ─── Visibilité par rôle ─────────────────────────────────────────────────
     visible_par: {
       type: Array,
       required: true,
-      default: "*",
+      default: ["*"], // "*" = visible par tous les rôles
     },
+
+    // ─── Informations du champ ───────────────────────────────────────────────
     libelle: { type: String, required: true, trim: true },
+
+    // Identifiant technique unique (snake_case), unique par menu (index composé)
     id_champ: {
       type: String,
       required: true,
       trim: true,
       validate: {
         validator: function (v) {
-          // Règle : Commence par une lettre, contient uniquement minuscules, chiffres ou underscores
-          // Pas d'espaces, pas d'accents, pas de majuscules.
+          // Règle : uniquement minuscules, chiffres ou underscores (ex: nom_client_1)
           return /^[a-z0-9_]+$/.test(v);
         },
-        message: props =>
-          `'${props.value}' n'est pas un identifiant valide. Utilisez uniquement des minuscules, des chiffres et des underscores (ex: nom_client_1).`
-      }
+        message: (props) =>
+          `'${props.value}' n'est pas un identifiant valide. Utilisez uniquement des minuscules, des chiffres et des underscores (ex: nom_client_1).`,
+      },
     },
+
+    // ─── Type du champ (HTML/UI) ─────────────────────────────────────────────
     type_champ: {
       type: String,
       required: true,
       trim: true,
-      enum: ["text", "number", "password", "textarea", "select", "multi-select", "date", "file"]
+      enum: ["text", "number", "password", "textarea", "select", "multi-select", "date", "file"],
     },
+
+    // Extensions acceptées — uniquement pertinent si type_champ === "file"
     acceptedFileTypes: {
-      type: Array
+      type: Array,
+      validate: {
+        validator: function (v) {
+          if (this.type_champ !== "file") {
+            return !v || v.length === 0;
+          }
+          return true;
+        },
+        message: "'acceptedFileTypes' ne peut être renseigné que pour un champ de type 'file'.",
+      },
     },
-    colonne: {
+
+    // ─── Comportement du champ ───────────────────────────────────────────────
+
+    // Indique si la valeur de ce champ doit être unique dans la table dynamique
+    is_unique: {
+      type: String,
+      required: [true, "Le champ 'is_unique' est obligatoire."],
+      enum: ["oui", "non"],
+      default: "non",
+    },
+
+    // Indique si ce champ est affiché dans le tableau côté front-end
+    afficher_tableau: {
       type: String,
       required: true,
-      enum: ["not-all", "all"],
-      default: "all"
+      enum: ["oui", "non"], // "oui" = visible dans le tableau, "non" = masqué
+      default: "oui",
     },
-    // is_unique: {
-    //   type: String,
-    //   required: [true, "Le champ unique est obligatoire"], // Message personnalisé pour débugger
-    //   enum: ["oui", "non"],
-    // },
+
+    // Validation de format appliquée à la valeur saisie
     type_validation: {
       type: String,
-      enum: ["email", "phone", "number"]
+      enum: ["email", "phone", "number", ""],
+      default: "",
     },
-    ordre: { type: String, required: true, trim: true, unique: true },
+
+    // Ordre d'affichage du champ — unique par menu (index composé)
+    ordre: { type: String, required: true, trim: true },
+
     commentaire: { type: String, trim: true },
+
     obligatoire: {
       type: String,
       required: true,
       enum: ["oui", "non"],
     },
+
+    // ─── Identifiant technique interne ───────────────────────────────────────
     code_champ: {
       type: String,
       required: true,
       unique: true,
       default: () => generateToken(16),
     },
+
+    // ─── Métadonnées ─────────────────────────────────────────────────────────
     status: {
       type: String,
       default: "1",
@@ -91,19 +130,30 @@ const champSchema = new mongoose.Schema(
   }
 );
 
-// Méthode d'instance pour formater la réponse
+// ─── Index composés ──────────────────────────────────────────────────────────
+// id_champ unique PAR menu (pas globalement)
+champSchema.index({ id_champ: 1, menu: 1 }, { unique: true });
+// ordre unique PAR menu (pas globalement)
+champSchema.index({ ordre: 1, menu: 1 }, { unique: true });
+
+// ─── Méthode d'instance : formatage de la réponse API ────────────────────────
 champSchema.methods.formatResponse = async function () {
-  const champData = this.toObject();
+  // Populate le menu si pas déjà fait
+  await this.populate("menu", "designation code_menu");
+
+  const champData = this.toObject({ virtuals: true });
   delete champData._id;
   delete champData.__v;
 
-  champData.menuName = champData.menu
-    ? (await fetchOneValue(
-      { code_menu: champData.menu },
-      "designation",
-      "acl_menus"
-    )) || ""
-    : "";
+  // Aplatir les informations du menu dans la réponse
+  if (champData.menu && typeof champData.menu === "object") {
+    champData.menuName = champData.menu.designation || "";
+    champData.menuCode = champData.menu.code_menu || "";
+    champData.menu = champData.menu._id; // Garder l'ObjectId pour référence
+  } else {
+    champData.menuName = "";
+    champData.menuCode = "";
+  }
 
   return champData;
 };

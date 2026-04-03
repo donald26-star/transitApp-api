@@ -1,53 +1,73 @@
 const { Champ } = require("../models/input.model");
 const { generateIdentifiant } = require("../../../utils/utils");
+const mongoose = require("mongoose");
 
-// ADD Champ
+// ─── Utilitaire : résoudre l'ObjectId du menu depuis son code_menu ────────────
+const resolveMenuId = async (code_menu) => {
+  const menu = await mongoose
+    .model("acl_menus")
+    .findOne({ code_menu: code_menu, type: "dynamique" }, "_id");
+  return menu ? menu._id : null;
+};
+
+// ─── ADD Champ ────────────────────────────────────────────────────────────────
 exports.registerChamp = async (req, res) => {
   try {
     const {
-      menu,
+      menu,           // code_menu (string) envoyé par le front
       visible_par,
       libelle,
       id_champ,
       type_champ,
+      acceptedFileTypes,
+      is_unique,
+      afficher_tableau,
+      type_validation,
       ordre,
       commentaire,
       obligatoire,
     } = req.body;
 
-    // Vérifier si un élément avec cet id_champ et ce menu existe déjà
-    const existeId_champ = await Champ.findOne({
-      id_champ: id_champ,
-      menu: menu,
-    });
-
-    if (existeId_champ) {
-      return res.status(409).json({
-        // Code 409 : Conflict
+    // Résoudre le code_menu en ObjectId
+    const menuId = await resolveMenuId(menu);
+    if (!menuId) {
+      return res.status(404).json({
         status: false,
-        message: "Cet identifiant existe déjà pour ce menu.",
+        message: `Le menu "${menu}" est introuvable ou n'est pas de type 'dynamique'.`,
         data: {},
       });
     }
 
-    // Vérifier si un élément avec cet ordre et ce menu existe déjà
-    const existeOrdre = await Champ.findOne({ ordre: ordre, menu: menu });
+    // Vérifier que l'id_champ n'existe pas déjà pour ce menu
+    const existeId_champ = await Champ.findOne({ id_champ, menu: menuId });
+    if (existeId_champ) {
+      return res.status(409).json({
+        status: false,
+        message: "Cet identifiant (id_champ) existe déjà pour ce menu.",
+        data: {},
+      });
+    }
 
+    // Vérifier que l'ordre n'existe pas déjà pour ce menu
+    const existeOrdre = await Champ.findOne({ ordre, menu: menuId });
     if (existeOrdre) {
       return res.status(409).json({
-        // Code 409 : Conflict
         status: false,
-        message: "Cet ordre existe déjà pour ce menu.",
+        message: "Cet ordre d'affichage existe déjà pour ce menu.",
         data: {},
       });
     }
 
     const champ = new Champ({
-      menu,
+      menu: menuId,
       visible_par,
       libelle,
       id_champ,
       type_champ,
+      acceptedFileTypes,
+      is_unique:        is_unique        || "non",
+      afficher_tableau: afficher_tableau || "oui",
+      type_validation,
       ordre,
       commentaire,
       obligatoire,
@@ -55,8 +75,7 @@ exports.registerChamp = async (req, res) => {
 
     await champ.save();
 
-    // Conversion de l'utilisateur en objet
-    const champReponse = champ.formatResponse(champ);
+    const champReponse = await champ.formatResponse();
 
     res.status(201).json({
       status: true,
@@ -72,39 +91,28 @@ exports.registerChamp = async (req, res) => {
   }
 };
 
-//GET ID CHAMP / LIBELLE
+// ─── GET ID_CHAMP suggéré depuis un libellé ───────────────────────────────────
 exports.generationId = async (req, res) => {
   try {
     const { libelle } = req.body;
 
-    // Validation de l'entrée
-    if (
-      !libelle ||
-      typeof libelle !== "string" ||
-      libelle.trim().length === 0
-    ) {
+    if (!libelle || typeof libelle !== "string" || libelle.trim().length === 0) {
       return res.status(400).json({
         status: false,
-        message:
-          "Le champ 'libelle' est requis et doit être une chaîne non vide.",
+        message: "Le champ 'libelle' est requis et doit être une chaîne non vide.",
         data: {},
       });
     }
 
-    // Génération de l'identifiant
     const identifiant = generateIdentifiant(libelle);
 
-    // Réponse réussie
-    return res.status(201).json({
+    return res.status(200).json({
       status: true,
       message: "Identifiant généré avec succès.",
-      data: { identifiant: identifiant },
+      data: { identifiant },
     });
   } catch (error) {
-    // Log de l'erreur (facultatif)
-    console.error("Erreur lors de la génération de l’identifiant :", error);
-
-    // Réponse en cas d'erreur
+    console.error("Erreur lors de la génération de l'identifiant :", error);
     return res.status(500).json({
       status: false,
       message: error.message || "Une erreur interne est survenue.",
@@ -113,22 +121,21 @@ exports.generationId = async (req, res) => {
   }
 };
 
-//GET DETAILS CHAMP / CODE_CHAMP
+// ─── GET Détail d'un champ par code_champ ─────────────────────────────────────
 exports.getChampInfo = async (req, res) => {
   try {
-    const code_champ = req.params.code_champ;
+    const { code_champ } = req.params;
 
-    const champ = await Champ.findOne({ code_champ: code_champ });
+    const champ = await Champ.findOne({ code_champ });
     if (!champ) {
       return res.status(404).json({
         status: false,
-        message: "Champ non trouvée.",
+        message: "Champ non trouvé.",
         data: {},
       });
     }
 
-    // Supprimer les informations sensibles
-    const champReponse = await champ.formatResponse(champ);
+    const champReponse = await champ.formatResponse();
 
     res.status(200).json({
       status: true,
@@ -144,12 +151,23 @@ exports.getChampInfo = async (req, res) => {
   }
 };
 
-//GET DETAILS CHAMP / menu
+// ─── GET Tous les champs d'un menu (par code_menu) ────────────────────────────
 exports.getChampInfoByMenu = async (req, res) => {
   try {
-    const { menu } = req.params;
+    const { menu } = req.params; // code_menu (string)
 
-    const champs = await Champ.find({ menu: menu });
+    // Résoudre code_menu → ObjectId
+    const menuId = await resolveMenuId(menu);
+    if (!menuId) {
+      return res.status(404).json({
+        status: false,
+        message: `Le menu "${menu}" est introuvable ou n'est pas de type 'dynamique'.`,
+        data: [],
+      });
+    }
+
+    // Récupérer et trier par ordre croissant
+    const champs = await Champ.find({ menu: menuId }).sort({ ordre: 1 });
 
     if (!champs || champs.length === 0) {
       return res.status(404).json({
@@ -160,7 +178,7 @@ exports.getChampInfoByMenu = async (req, res) => {
     }
 
     const champsReponse = await Promise.all(
-      champs.map(async (champ) => await champ.formatResponse())
+      champs.map((champ) => champ.formatResponse())
     );
 
     return res.status(200).json({
@@ -177,20 +195,15 @@ exports.getChampInfoByMenu = async (req, res) => {
   }
 };
 
-//GET ALL NOTES
+// ─── GET Liste complète de tous les champs ────────────────────────────────────
 exports.getChampListe = async (req, res) => {
   try {
-    // Récupérer tous les profils
-    const champs = await Champ.find();
+    const champs = await Champ.find().sort({ createdAt: -1 });
 
-    // Supprimer les informations sensibles pour chaque profil
     const champReponse = await Promise.all(
       champs.map(async (champ, index) => {
         const formattedResponse = await champ.formatResponse();
-        return {
-          ...formattedResponse,
-          position: index + 1, // Ajoute la position en commençant par 1
-        };
+        return { ...formattedResponse, position: index + 1 };
       })
     );
 
@@ -208,67 +221,28 @@ exports.getChampListe = async (req, res) => {
   }
 };
 
-// Mise A JOUR DU NOTE
+// ─── UPDATE Champ (code_champ dans les params) ────────────────────────────────
 exports.updateChamp = async (req, res) => {
   try {
+    const { code_champ } = req.params; // ← identifiant dans l'URL
+
     const {
       menu,
       visible_par,
       libelle,
       id_champ,
       type_champ,
+      acceptedFileTypes,
+      is_unique,
+      afficher_tableau,
+      type_validation,
       ordre,
       commentaire,
       obligatoire,
-      code_champ,
     } = req.body;
 
-    // Vérifier si l'utilisateur existe
-    const champ = await Champ.findOne({ code_champ: code_champ });
-    if (!champ) {
-      return res.status(404).json({
-        status: false,
-        message: "Champ non trouvée.",
-        data: {},
-      });
-    }
-
-    // Mettre à jour les champs modifiables
-    if (menu) champ.menu = menu;
-    if (visible_par) champ.visible_par = visible_par;
-    if (libelle) champ.libelle = libelle;
-    if (id_champ) champ.id_champ = id_champ;
-    if (type_champ) champ.type_champ = type_champ;
-    if (ordre) champ.ordre = ordre;
-    if (commentaire) champ.commentaire = commentaire;
-    if (obligatoire) champ.obligatoire = obligatoire;
-
-    // Enregistrer les modifications
-    await champ.save();
-
-    // Supprimer le mot de passe des données de la réponse
-    const champReponse = champ.formatResponse(champ);
-
-    res.status(200).json({
-      status: true,
-      message: "Champ mise à jour avec succès.",
-      data: champReponse,
-    });
-  } catch (error) {
-    res.status(400).json({
-      status: true,
-      message: error.message || "Une erreur interne est survenue.",
-      data: {},
-    });
-  }
-};
-
-exports.deleteChamp = async (req, res) => {
-  try {
-    const code_champ = req.params.code_champ;
-
-    // Vérifier si le champ existe
-    const champ = await Champ.findOne({ code_champ: code_champ });
+    // Vérifier que le champ existe
+    const champ = await Champ.findOne({ code_champ });
     if (!champ) {
       return res.status(404).json({
         status: false,
@@ -277,8 +251,98 @@ exports.deleteChamp = async (req, res) => {
       });
     }
 
-    // Supprimer le champ
-    await champ.deleteOne({ code_champ: code_champ });
+    // Si le menu change, résoudre le nouveau code_menu en ObjectId
+    let menuId = champ.menu; // conserver l'existant par défaut
+    if (menu) {
+      menuId = await resolveMenuId(menu);
+      if (!menuId) {
+        return res.status(404).json({
+          status: false,
+          message: `Le menu "${menu}" est introuvable ou n'est pas de type 'dynamique'.`,
+          data: {},
+        });
+      }
+    }
+
+    // Vérifier unicité id_champ par menu (exclure le document en cours)
+    if (id_champ) {
+      const existeId_champ = await Champ.findOne({
+        id_champ,
+        menu: menuId,
+        code_champ: { $ne: code_champ },
+      });
+      if (existeId_champ) {
+        return res.status(409).json({
+          status: false,
+          message: "Cet identifiant (id_champ) existe déjà pour ce menu.",
+          data: {},
+        });
+      }
+    }
+
+    // Vérifier unicité ordre par menu (exclure le document en cours)
+    if (ordre) {
+      const existeOrdre = await Champ.findOne({
+        ordre,
+        menu: menuId,
+        code_champ: { $ne: code_champ },
+      });
+      if (existeOrdre) {
+        return res.status(409).json({
+          status: false,
+          message: "Cet ordre d'affichage existe déjà pour ce menu.",
+          data: {},
+        });
+      }
+    }
+
+    // Appliquer les modifications
+    champ.menu             = menuId;
+    if (visible_par      !== undefined) champ.visible_par      = visible_par;
+    if (libelle          !== undefined) champ.libelle          = libelle;
+    if (id_champ         !== undefined) champ.id_champ         = id_champ;
+    if (type_champ       !== undefined) champ.type_champ       = type_champ;
+    if (acceptedFileTypes!== undefined) champ.acceptedFileTypes= acceptedFileTypes;
+    if (is_unique        !== undefined) champ.is_unique        = is_unique;
+    if (afficher_tableau !== undefined) champ.afficher_tableau = afficher_tableau;
+    if (type_validation  !== undefined) champ.type_validation  = type_validation;
+    if (ordre            !== undefined) champ.ordre            = ordre;
+    if (commentaire      !== undefined) champ.commentaire      = commentaire;
+    if (obligatoire      !== undefined) champ.obligatoire      = obligatoire;
+
+    await champ.save();
+
+    const champReponse = await champ.formatResponse();
+
+    res.status(200).json({
+      status: true,
+      message: "Champ mis à jour avec succès.",
+      data: champReponse,
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: false,
+      message: error.message || "Une erreur interne est survenue.",
+      data: {},
+    });
+  }
+};
+
+// ─── DELETE Champ ─────────────────────────────────────────────────────────────
+exports.deleteChamp = async (req, res) => {
+  try {
+    const { code_champ } = req.params;
+
+    const champ = await Champ.findOne({ code_champ });
+    if (!champ) {
+      return res.status(404).json({
+        status: false,
+        message: "Champ non trouvé.",
+        data: {},
+      });
+    }
+
+    await champ.deleteOne();
 
     res.status(200).json({
       status: true,

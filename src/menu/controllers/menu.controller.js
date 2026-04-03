@@ -27,6 +27,19 @@ exports.registerMenu = async (req, res) => {
             data: menuResponse,
         });
     } catch (error) {
+        if (error.code === 11000) {
+            let errorMessage = "Un élément avec cet identifiant ou cet ordre existe déjà.";
+            if (error.keyPattern && error.keyPattern.ordre) {
+                errorMessage = "Cet ordre d'affichage est déjà utilisé pour ce parent. Veuillez en choisir un autre.";
+            } else if (error.keyPattern && error.keyPattern.designation) {
+                errorMessage = "Cette désignation de menu existe déjà.";
+            }
+            return res.status(409).json({
+                status: false,
+                message: errorMessage,
+                data: {}
+            });
+        }
         res.status(500).json({ 
             status: false,
             message: error.message || 'Une erreur interne est survenue.',
@@ -74,10 +87,21 @@ exports.getMenuByProfile = async (req, res) => {
         const rawMenu = await fetchOneValue({ profil: profil }, "menuList", "acl_privilege_profiles");
 
         if (!rawMenu || (Array.isArray(rawMenu) && rawMenu.length === 0)) {
-            return res.status(404).json({
-                status: false,
-                message: "Aucun menu trouvé pour ce profil.",
-                data: {}
+            // Retourner un menu par défaut au lieu d'une erreur 404
+            const defaultMenu = {
+                designation: "Tableau de bord",
+                type: "enfant",
+                route: "/",
+                svg: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>',
+                ordre: "1",
+                code_menu: "default_dashboard",
+                status: "1",
+                corbeille: "0"
+            };
+            return res.status(200).json({
+                status: true,
+                message: "Menu par défaut (Tableau de bord).",
+                data: [defaultMenu]
             });
         }
 
@@ -161,15 +185,16 @@ exports.updateMenu = async (req, res) => {
             });
         }
 
-        // Mettre à jour les champs modifiables
-        if (designation) menu.designation = designation;
-        if (type) menu.type = type;
-        if (route) menu.route = route;
-        if (svg) menu.svg = svg;
-        if (ordre) menu.ordre = ordre;
-        if (commentaire) menu.commentaire = commentaire;
-        if (parent) menu.parent = parent;
-        if (tbl_name) menu.tbl_name = tbl_name;
+        // Mettre à jour les champs modifiables de manière stricte (!== undefined)
+        // Cela permet de recevoir une chaîne vide "" pour supprimer un parent par exemple
+        if (designation !== undefined) menu.designation = designation;
+        if (type !== undefined) menu.type = type;
+        if (route !== undefined) menu.route = route;
+        if (svg !== undefined) menu.svg = svg;
+        if (ordre !== undefined) menu.ordre = ordre;
+        if (commentaire !== undefined) menu.commentaire = commentaire;
+        if (parent !== undefined) menu.parent = parent; 
+        if (tbl_name !== undefined) menu.tbl_name = tbl_name;
 
         menu.__v = menu.__v+1; // met a jour le nombre de modification d'un element
 
@@ -185,8 +210,21 @@ exports.updateMenu = async (req, res) => {
             data: menuResponse
         });
     } catch (error) {
+        if (error.code === 11000) {
+            let errorMessage = "Un élément avec cet identifiant ou cet ordre existe déjà.";
+            if (error.keyPattern && error.keyPattern.ordre) {
+                errorMessage = "Cet ordre d'affichage est déjà utilisé pour ce parent. Veuillez en choisir un autre.";
+            } else if (error.keyPattern && error.keyPattern.designation) {
+                errorMessage = "Cette désignation de menu existe déjà.";
+            }
+            return res.status(409).json({
+                status: false,
+                message: errorMessage,
+                data: {}
+            });
+        }
         res.status(400).json({ 
-            status: true,
+            status: false,
             message: error.message || 'Une erreur interne est survenue.',
             data: {}
         });

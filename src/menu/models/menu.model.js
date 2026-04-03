@@ -7,7 +7,7 @@ const menuSchema = new mongoose.Schema({
     type: { type: String, trim: true, enum:["enfant","parent","dynamique"], required:true},
     route: { type: String, trim: true, required:true},
     svg: { type: String},
-    ordre: { type: String, required:true, unique: true},
+    ordre: { type: String, required:true }, // "unique: true" retiré et géré via un index composé
     code_menu: { 
         type: String, 
         required: true, 
@@ -15,13 +15,18 @@ const menuSchema = new mongoose.Schema({
         unique:true,
     },
     commentaire: { type: String, trim: true },
-    parent: { type: String, trim: true },
+    parent: { type: String, trim: true, default: "" }, // Chaîne vide par défaut pour stabiliser l'index composé
     tbl_name: { type: String, trim: true },
     status: { type: String, default: '1', enum: ["0", "1", "-1"] }, // 0 inactif , 1 Actif , -1 Suspendu
     corbeille: { type: String, default: '0', enum: ["0", "1", "-1"] } // 0 pas dans la corbeille , 1 dans la corbeille
 }, {
     timestamps: true // Ajoute createdAt et updatedAt automatiquement
 });
+
+// Index composé : l'ordre est unique uniquement pour le même parent.
+// Les enfants du parent A auront leurs ordres (1, 2...), ceux du parent B aussi.
+// Les menus principaux (parent = "") auront aussi leurs propres ordres uniques.
+menuSchema.index({ ordre: 1, parent: 1 }, { unique: true });
 
 // Méthode d'instance pour formater la réponse menu
 menuSchema.methods.formatResponse = function () {

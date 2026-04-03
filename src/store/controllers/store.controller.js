@@ -3,49 +3,107 @@ const { generateToken } = require("../../../utils/utils");
 const { Champ } = require("../../inputs/models/input.model");
 const mongoose = require("mongoose");
 
-// ADD Champ
+// ─── Utilitaire : résoudre code_menu → { menuId, tableName } ─────────────────
+const resolveMenu = async (code_menu) => {
+  const menu = await mongoose
+    .model("acl_menus")
+    .findOne({ code_menu, type: "dynamique" }, "_id tbl_name designation code_menu");
+  if (!menu) return null;
+  return { menuId: menu._id, tableName: menu.tbl_name, designation: menu.designation, code_menu: menu.code_menu };
+};
+
+// ─── Utilitaire : valider les données soumises selon les champs du menu ───────
+// Retourne { dataToSave, errors } en tenant compte de is_unique dans la collection
+const buildAndValidateData = async (champs, formData, tableName, excludeCode = null) => {
+  const Collection = mongoose.connection.collection(tableName);
+  const dataToSave = {};
+  const errors = [];
+
+  for (const champ of champs) {
+    const key = champ.id_champ;
+    const value = formData[key];
+
+    // Si c'est une mise à jour (excludeCode présent) et que le champ n'est pas envoyé, on l'ignore (mise à jour partielle)
+    if (excludeCode && value === undefined) {
+      continue;
+    }
+
+    // Champ obligatoire manquant
+    if (champ.obligatoire === "oui" && (value === undefined || value === null || value === "")) {
+      errors.push(`Le champ '${champ.libelle}' (${key}) est obligatoire.`);
+      continue;
+    }
+
+    if (value !== undefined) {
+      // Vérification d'unicité dans la table dynamique
+      if (champ.is_unique === "oui") {
+        const query = { [key]: value };
+        if (excludeCode) query.code_dynamique = { $ne: excludeCode };
+        const existing = await Collection.findOne(query);
+        if (existing) {
+          errors.push(`La valeur de '${champ.libelle}' (${key}) doit être unique, mais elle existe déjà.`);
+          continue;
+        }
+      }
+      dataToSave[key] = value;
+    }
+  }
+
+  return { dataToSave, errors };
+};
+
+// ─── ADD : Enregistrer une donnée dynamique ───────────────────────────────────
 exports.registerDynamique = async (req, res) => {
   try {
-    const { menu, ...formData } = req.body;
-    const tableName = await fetchOneValue({ code_menu: menu }, "tbl_name", "acl_menus");
+    const { menu: code_menu, ...formData } = req.body;
 
-    if (!tableName || typeof tableName !== "string" || !menu) {
+    if (!code_menu) {
       return res.status(400).json({
         status: false,
-        message: "Les champs 'tableName' et 'menu' sont requis.",
+        message: "Le champ 'menu' (code_menu) est requis.",
         data: {},
       });
     }
 
-    // Récupération des champs autorisés depuis acl_champs
-    const champs = await Champ.find({ menu });
+    // Résoudre le menu
+    const menuInfo = await resolveMenu(code_menu);
+    if (!menuInfo) {
+      return res.status(404).json({
+        status: false,
+        message: `Le menu "${code_menu}" est introuvable ou n'est pas de type 'dynamique'.`,
+        data: {},
+      });
+    }
+    const { menuId, tableName } = menuInfo;
 
+    // Récupérer les champs définis pour ce menu (triés par ordre)
+    const champs = await Champ.find({ menu: menuId }).sort({ ordre: 1 });
     if (!champs.length) {
       return res.status(404).json({
         status: false,
-        message: `Aucun champ trouvé pour le menu '${menu}'`,
+        message: `Aucun champ configuré pour le menu '${code_menu}'.`,
         data: {},
       });
     }
 
-    // Construction de l'objet à insérer uniquement avec les champs autorisés
-    const dataToSave = { menu };
-    for (let champ of champs) {
-      const key = champ.id_champ;
-      if (formData.hasOwnProperty(key)) {
-        dataToSave[key] = formData[key];
-      }
+    // Construire et valider les données
+    const { dataToSave, errors } = await buildAndValidateData(champs, formData, tableName);
+    if (errors.length) {
+      return res.status(422).json({
+        status: false,
+        message: "Erreurs de validation.",
+        data: { errors },
+      });
     }
 
-    // Génère un code_dynamique si non fourni
-    if (!formData.code_dynamique) {
-      dataToSave.code_dynamique = generateToken(16);
-    }
+    // Ajouter les métadonnées
+    dataToSave.menu = code_menu;
+    dataToSave.code_dynamique = generateToken(16);
 
-    // Création dynamique du modèle
+    // Créer/récupérer le modèle dynamique et sauvegarder
     const Model =
       mongoose.models[tableName] ||
-      mongoose.model(tableName, new mongoose.Schema({}, { strict: false }));
+      mongoose.model(tableName, new mongoose.Schema({}, { strict: false, timestamps: true }));
 
     const doc = new Model(dataToSave);
     await doc.save();
@@ -53,6 +111,12 @@ exports.registerDynamique = async (req, res) => {
     const response = doc.toObject();
     delete response._id;
     delete response.__v;
+
+    // Remplacer le champ "menu" string par un objet détaillé
+    response.menu = {
+      code_menu: menuInfo.code_menu,
+      designation: menuInfo.designation,
+    };
 
     res.status(201).json({
       status: true,
@@ -68,63 +132,45 @@ exports.registerDynamique = async (req, res) => {
   }
 };
 
-// Mise A JOUR DU NOTE
+// ─── UPDATE : Mettre à jour une donnée dynamique ──────────────────────────────
 exports.updateDynamqique = async (req, res) => {
   try {
-    const { code_dynamique } = req.params; // On s'attend à ce que le code soit dans l'URL
-    const { menu, ...formData } = req.body;
+    const { code_dynamique } = req.params;
+    const { menu: code_menu, ...formData } = req.body;
 
-    if (!menu || !code_dynamique) {
+    if (!code_menu || !code_dynamique) {
       return res.status(400).json({
         status: false,
-        message: "Le 'menu' dans le body et le 'code_dynamique' dans l'URL sont requis.",
+        message: "Le 'menu' (body) et le 'code_dynamique' (URL) sont requis.",
         data: {},
       });
     }
 
-    const tableName = await fetchOneValue({ code_menu: menu }, "tbl_name", "acl_menus");
-
-    if (!tableName) {
-      return res.status(400).json({
+    // Résoudre le menu
+    const menuInfo = await resolveMenu(code_menu);
+    if (!menuInfo) {
+      return res.status(404).json({
         status: false,
-        message: "Table de destination introuvable pour ce menu.",
+        message: `Le menu "${code_menu}" est introuvable ou n'est pas de type 'dynamique'.`,
         data: {},
       });
     }
+    const { menuId, tableName } = menuInfo;
 
-    // Récupération des champs autorisés depuis acl_champs
-    const champs = await Champ.find({ menu });
-
+    // Récupérer les champs définis pour ce menu
+    const champs = await Champ.find({ menu: menuId }).sort({ ordre: 1 });
     if (!champs.length) {
       return res.status(404).json({
         status: false,
-        message: `Aucun champ trouvé pour le menu '${menu}'`,
+        message: `Aucun champ configuré pour le menu '${code_menu}'.`,
         data: {},
       });
     }
 
-    // Construction de l'objet de mise à jour uniquement avec les champs autorisés
-    const dataToUpdate = {};
-    for (let champ of champs) {
-      const key = champ.id_champ;
-      if (formData.hasOwnProperty(key)) {
-        dataToUpdate[key] = formData[key];
-      }
-    }
-
-    if (Object.keys(dataToUpdate).length === 0) {
-      return res.status(400).json({
-        status: false,
-        message: "Aucune donnée valide fournie pour la mise à jour.",
-        data: {},
-      });
-    }
-
-    // Accéder directement à la collection MongoDB (comme tu l'as fait pour delete)
     const Collection = mongoose.connection.collection(tableName);
 
-    // Vérifier si l'enregistrement dynamique existe
-    const existingDoc = await Collection.findOne({ code_dynamique: code_dynamique });
+    // Vérifier que l'enregistrement existe
+    const existingDoc = await Collection.findOne({ code_dynamique });
     if (!existingDoc) {
       return res.status(404).json({
         status: false,
@@ -133,54 +179,40 @@ exports.updateDynamqique = async (req, res) => {
       });
     }
 
-    // Mettre à jour l'enregistrement
-    await Collection.updateOne(
-      { code_dynamique: code_dynamique },
-      { $set: dataToUpdate }
-    );
+    // Construire et valider les données (en excluant le doc courant pour is_unique)
+    const { dataToSave, errors } = await buildAndValidateData(champs, formData, tableName, code_dynamique);
+    if (errors.length) {
+      return res.status(422).json({
+        status: false,
+        message: "Erreurs de validation.",
+        data: { errors },
+      });
+    }
 
-    // Récupérer le document mis à jour pour le renvoyer proprement
-    const updatedDoc = await Collection.findOne({ code_dynamique: code_dynamique });
+    if (Object.keys(dataToSave).length === 0) {
+      return res.status(400).json({
+        status: false,
+        message: "Aucune donnée valide fournie pour la mise à jour.",
+        data: {},
+      });
+    }
+
+    await Collection.updateOne({ code_dynamique }, { $set: dataToSave });
+
+    const updatedDoc = await Collection.findOne({ code_dynamique });
     if (updatedDoc) {
-      delete updatedDoc._id; // On retire l'ObjectId natif de Mongo pour la réponse
+      delete updatedDoc._id;
+      // Remplacer le champ "menu" string par un objet détaillé
+      updatedDoc.menu = {
+        code_menu: menuInfo.code_menu,
+        designation: menuInfo.designation,
+      };
     }
 
     res.status(200).json({
       status: true,
       message: "Enregistrement mis à jour avec succès.",
       data: updatedDoc,
-    });
-  } catch (error) {
-    res.status(500).json({ // Correction: 500 et status false
-      status: false,
-      message: error.message || "Une erreur interne est survenue.",
-      data: {},
-    });
-  }
-};
-
-//GET DETAILS CHAMP / CODE_CHAMP
-exports.getOneDynamique = async (req, res) => {
-  try {
-    const { code_dynamique, menu } = req.params;
-    const tableName = await fetchOneValue({ code_menu: menu }, 'tbl_name', "acl_menus");
-    const champ = await fetchOneWhere({ code_dynamique: code_dynamique }, tableName);
-
-    if (!champ) {
-      return res.status(404).json({
-        status: false,
-        message: "Champ non trouvée.",
-        data: {},
-      });
-    }
-
-    // Supprimer les informations sensibles
-    // const champReponse = await champ.formatResponse(champ);
-
-    res.status(200).json({
-      status: true,
-      message: "Succès.",
-      data: champ,
     });
   } catch (error) {
     res.status(500).json({
@@ -191,15 +223,66 @@ exports.getOneDynamique = async (req, res) => {
   }
 };
 
-//GET DETAILS CHAMP / menu
+// ─── GET : Détail d'un enregistrement dynamique ───────────────────────────────
+exports.getOneDynamique = async (req, res) => {
+  try {
+    const { code_dynamique, menu: code_menu } = req.params;
+
+    const menuInfo = await resolveMenu(code_menu);
+    if (!menuInfo) {
+      return res.status(404).json({
+        status: false,
+        message: `Le menu "${code_menu}" est introuvable ou n'est pas de type 'dynamique'.`,
+        data: {},
+      });
+    }
+
+    const doc = await fetchOneWhere({ code_dynamique }, menuInfo.tableName);
+    if (!doc) {
+      return res.status(404).json({
+        status: false,
+        message: "Enregistrement non trouvé.",
+        data: {},
+      });
+    }
+
+    // Remplacer le champ "menu" string par un objet détaillé
+    doc.menu = {
+      code_menu: menuInfo.code_menu,
+      designation: menuInfo.designation,
+    };
+
+    res.status(200).json({
+      status: true,
+      message: "Succès.",
+      data: doc,
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: false,
+      message: error.message || "Une erreur interne est survenue.",
+      data: {},
+    });
+  }
+};
+
+// ─── GET : Tous les enregistrements dynamiques d'un menu ─────────────────────
 exports.getDynamiqueInfoByMenu = async (req, res) => {
   try {
-    const { menu } = req.params;
-    const tableName = await fetchOneValue({ code_menu: menu }, "tbl_name", "acl_menus");
+    const { menu: code_menu } = req.params;
 
-    const champs = await fetchAll(tableName)
+    const menuInfo = await resolveMenu(code_menu);
+    if (!menuInfo) {
+      return res.status(404).json({
+        status: false,
+        message: `Le menu "${code_menu}" est introuvable ou n'est pas de type 'dynamique'.`,
+        data: [],
+      });
+    }
 
-    if (!champs || champs.length === 0) {
+    const docs = await fetchAll(menuInfo.tableName);
+
+    if (!docs || docs.length === 0) {
       return res.status(404).json({
         status: false,
         message: "Aucune donnée trouvée pour ce menu.",
@@ -207,14 +290,19 @@ exports.getDynamiqueInfoByMenu = async (req, res) => {
       });
     }
 
-    // const champsReponse = await Promise.all(
-    //   champs.map(async (champ) => await champ.formatResponse())
-    // );
+    // Transformer le champ "menu" en objet pour chaque document
+    const formattedDocs = docs.map((doc) => ({
+      ...doc,
+      menu: {
+        code_menu: menuInfo.code_menu,
+        designation: menuInfo.designation,
+      },
+    }));
 
     return res.status(200).json({
       status: true,
       message: "Succès.",
-      data: champs,
+      data: formattedDocs,
     });
   } catch (error) {
     return res.status(500).json({
@@ -225,19 +313,24 @@ exports.getDynamiqueInfoByMenu = async (req, res) => {
   }
 };
 
-//GET ALL NOTES
+// ─── GET : Liste globale des menus dynamiques et leur nombre d'entrées ────────
 exports.getDynamiqueListe = async (req, res) => {
   try {
-    // Récupérer tous les profils
-    const champs = await Champ.find();
+    // Récupérer tous les menus dynamiques qui ont des champs configurés
+    const menus = await mongoose
+      .model("acl_menus")
+      .find({ type: "dynamique" }, "code_menu designation tbl_name");
 
-    // Supprimer les informations sensibles pour chaque profil
-    const champReponse = await Promise.all(
-      champs.map(async (champ, index) => {
-        const formattedResponse = await champ.formatResponse();
+    const result = await Promise.all(
+      menus.map(async (menu, index) => {
+        const Collection = mongoose.connection.collection(menu.tbl_name);
+        const count = await Collection.countDocuments();
         return {
-          ...formattedResponse,
-          position: index + 1, // Ajoute la position en commençant par 1
+          position: index + 1,
+          code_menu: menu.code_menu,
+          designation: menu.designation,
+          tbl_name: menu.tbl_name,
+          total_enregistrements: count,
         };
       })
     );
@@ -245,7 +338,7 @@ exports.getDynamiqueListe = async (req, res) => {
     res.status(200).json({
       status: true,
       message: "Succès.",
-      data: champReponse,
+      data: result,
     });
   } catch (error) {
     res.status(500).json({
@@ -256,24 +349,24 @@ exports.getDynamiqueListe = async (req, res) => {
   }
 };
 
+// ─── DELETE : Supprimer un enregistrement dynamique ───────────────────────────
 exports.deleteDynamque = async (req, res) => {
   try {
-    const { code_dynamique, menu } = req.params;
+    const { code_dynamique, menu: code_menu } = req.params;
 
-    // 1. Récupérer le nom de la table (collection)
-    const tableName = await fetchOneValue({ code_menu: menu }, "tbl_name", "acl_menus");
-
-    if (!tableName) {
-      return res.status(400).json({ status: false, message: "Table de destination introuvable." });
+    const menuInfo = await resolveMenu(code_menu);
+    if (!menuInfo) {
+      return res.status(400).json({
+        status: false,
+        message: "Table de destination introuvable pour ce menu.",
+        data: {},
+      });
     }
 
-    // 2. Accéder directement à la collection MongoDB
-    const Collection = mongoose.connection.collection(tableName);
+    const Collection = mongoose.connection.collection(menuInfo.tableName);
 
-    // 3. Vérifier si le document existe
-    const champ = await Collection.findOne({ code_dynamique: code_dynamique });
-
-    if (!champ) {
+    const doc = await Collection.findOne({ code_dynamique });
+    if (!doc) {
       return res.status(404).json({
         status: false,
         message: "Élément non trouvé.",
@@ -281,8 +374,7 @@ exports.deleteDynamque = async (req, res) => {
       });
     }
 
-    // 4. Supprimer l'élément via la collection (et non via l'objet 'champ')
-    await Collection.deleteOne({ code_dynamique: code_dynamique });
+    await Collection.deleteOne({ code_dynamique });
 
     res.status(200).json({
       status: true,

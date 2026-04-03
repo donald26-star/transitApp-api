@@ -1,0 +1,5 @@
+
+❌ TEST FAILED: devrait mettre ├á jour un champ existant
+Error: HTTP 500 from API: {"status":false,"message":"acl_champs validation failed: type_champ: `email` is not a valid enum value for path `type_champ`.","data":{}}
+    at Object.<anonymous> (C:\Users\Donald\Projects\node\transit_api\src\tests\input.controller.test.js:130:23)
+    at processTicksAndRejections (node:internal/process/task_queues:95:5)
