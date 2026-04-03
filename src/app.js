@@ -10,6 +10,8 @@ const menuRoute = require('./menu/routes/menu.route');
 const storeRoute = require('./store/routes/store.route');
 const privilegeRoute = require('./privilege/routes/privilege.route');
 const dossierRoute = require('./dossier/routes/dossier.routes');
+const statsRoute = require('./stats/stats.routes');
+const notificationRoute = require('./notification/routes/notification.routes');
 
 const app = express();
 
@@ -34,6 +36,8 @@ app.use('/api/input', inputRoute); // ROUTES CHAMP
 app.use('/api/menu', menuRoute); // ROUTES MENU
 app.use('/api/store', storeRoute); // ROUTES MENU
 app.use('/api/dossier/v1', dossierRoute); // ROUTES DOSSIER
+app.use('/api/stats', statsRoute); // ROUTES STATS GLOBALES
+app.use('/api/notification', notificationRoute); // ROUTES NOTIFICATIONS
 
 // Route par défaut
 app.get('/', (req, res) => {

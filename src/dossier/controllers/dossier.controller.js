@@ -1,4 +1,6 @@
 const { Dossier } = require('../models/dossier.model');
+const { createNotificationInternal } = require('../../notification/controllers/notification.controller');
+const { Administrateur } = require('../../admin/models/admin.model');
 
 // ADD DOSSIER
 exports.registerDossier = async (req, res) => {
@@ -17,6 +19,23 @@ exports.registerDossier = async (req, res) => {
 
         const dossier = new Dossier(dossierData);
         await dossier.save();
+
+        // --- NOTIFICATION ---
+        try {
+            const admins = await Administrateur.find({ status: '1', corbeille: '0' });
+            for (const admin of admins) {
+                await createNotificationInternal(
+                    admin.token, 
+                    "Nouveau Dossier", 
+                    `Le dossier ${dossier.num_dossier} pour le client ${dossier.client} a été ouvert.`,
+                    'success',
+                    { dossierCode: dossier.code_dossier }
+                );
+            }
+        } catch (notifErr) {
+            console.error("Erreur notification creation:", notifErr);
+        }
+        // --------------------
         
         res.status(201).json({
             status: true,
@@ -117,10 +136,27 @@ exports.updateDossier = async (req, res) => {
 
         await dossier.save();
 
+        // --- NOTIFICATION ---
+        try {
+            const admins = await Administrateur.find({ status: '1', corbeille: '0' });
+            for (const admin of admins) {
+                await createNotificationInternal(
+                    admin.token, 
+                    "Mise à jour Dossier", 
+                    `Le dossier ${dossier.num_dossier} (${dossier.client}) a été mis à jour par un collaborateur.`,
+                    'info',
+                    { dossierCode: dossier.code_dossier }
+                );
+            }
+        } catch (notifErr) {
+            console.error("Erreur notification creation:", notifErr);
+        }
+        // --------------------
+
         res.status(200).json({
             status: true,
             message: 'Dossier mis à jour avec succès.',
-            data: dossier.formatResponse()
+            data: dossier.formatResponse(),
         });
     } catch (error) {
         res.status(400).json({ 
