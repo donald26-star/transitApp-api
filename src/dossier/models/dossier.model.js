@@ -63,11 +63,58 @@ const dossierSchema = new mongoose.Schema({
     delai_proforma_jours: { type: Number, default: 0 },
     date_bae_sortie: { type: Date },
     observations: { type: String, trim: true },
+    
+    // --- ACTIONS LIÉES AU DOSSIER ---
+    
+    // 1. MANIFESTE
+    manifeste: {
+        a_manifester: { type: String, default: 'non' },
+        num_lta: { type: String, trim: true },
+        date_lta: { type: Date },
+        nb_colis: { type: Number },
+        description_marchandise: { type: String, trim: true },
+        importateur: { type: String, trim: true },
+        pb: { type: Number }
+    },
+
+    // 2. DÉCLARATION EN DOUANE
+    declaration_douane: {
+        num_bon_provisoire: { type: String, trim: true },
+        date_bon_provisoire: { type: Date },
+        date_transmission_regularisation: { type: Date },
+        num_declaration_detail: { type: String, trim: true },
+        date_declaration_detail: { type: Date },
+        age_bon_provisoire: { type: Number }, // En jours
+        motif_non_regularisation: { type: String, trim: true }
+    },
+
+    // 3. SUIVI D56 ET D18
+    suivi_d56_d18: {
+        type_regime: { type: String, enum: ['D56', 'D18', 'Autre', 'Aucun'], default: 'Aucun' },
+        duree_regime_jours: { type: Number }, // Durée initiale + prorogations
+        echeance: { type: Date },
+        unite_apurement: { type: String, trim: true },
+        qte_apurement: { type: Number },
+        reste_apurer: { type: Number },
+        nbre_jours_restant: { type: Number }
+    },
+
+    // 4. APUREMENT (Dynamique / Multiple)
+    apurements: [{
+        index: { type: Number },
+        regime: { type: String }, // nb ou libellé
+        num_decl: { type: String },
+        date_decl: { type: Date },
+        qte_apuree: { type: Number },
+        libelle: { type: String, trim: true },
+        observation: { type: String, trim: true }
+    }],
+
     status: { 
         type: String, 
         required: true, 
         default: '1', 
-        enum: ["0", "1", "-1"] // 0 = Fermé, 1 = Ouvert, -1 = Annulé
+        enum: ["0", "1", "-1"]
     },
     corbeille: { 
         type: String, 
@@ -84,7 +131,6 @@ const dossierSchema = new mongoose.Schema({
     timestamps: true
 });
 
-// Méthode pour formater la réponse
 dossierSchema.methods.formatResponse = function () {
     const dossierData = this.toObject();
     delete dossierData._id;
