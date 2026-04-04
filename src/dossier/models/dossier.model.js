@@ -136,6 +136,12 @@ const dossierSchema = new mongoose.Schema({
         total_taxes: { type: Number, default: 0 }
     }],
 
+    // --- RÉSULTATS CONSOLIDÉS (Calculés automatiquement côté Front) ---
+    total_valeur_caf: { type: Number, default: 0 },
+    total_taxes_dossier: { type: Number, default: 0 },
+    redevance_caution: { type: Number, default: 0 },
+    taux_caution: { type: Number, default: 0.0025 },
+
     status: { 
         type: String, 
         required: true, 

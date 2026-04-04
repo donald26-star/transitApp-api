@@ -232,10 +232,16 @@ exports.updateOperation = async (req, res) => {
 
         // Mettre à jour les articles et recalculer les totaux par article
         if (articles && Array.isArray(articles)) {
+            let consolidatedValeurCaf = 0;
+            let consolidatedTotalTaxes = 0;
+
             const updatedArticles = articles.map(art => {
                 const valeur_caf = (Number(art.valeur_fob) || 0) + (Number(art.fret) || 0) + (Number(art.assurance) || 0);
                 const total_taxes = (Number(art.dd) || 0) + (Number(art.rsta) || 0) + (Number(art.pcs) || 0) + (Number(art.pcc) || 0) + (Number(art.tva) || 0) + (Number(art.autres_taxes) || 0);
                 
+                consolidatedValeurCaf += valeur_caf;
+                consolidatedTotalTaxes += total_taxes;
+
                 return {
                     ...art,
                     valeur_caf,
@@ -243,9 +249,23 @@ exports.updateOperation = async (req, res) => {
                 };
             });
             dossier.articles = updatedArticles;
+            dossier.total_valeur_caf = consolidatedValeurCaf;
+            dossier.total_taxes_dossier = consolidatedTotalTaxes;
+
+            // --- CALCUL AUTOMATIQUE DE LA CAUTION ---
+            // On vérifie le type de régime douanier du dossier
+            const { RegimeDouanier } = require('../models/regime.model');
+            const findRegime = await RegimeDouanier.findOne({ code: dossier.regime_douanier });
+            
+            if (findRegime && findRegime.type === 'suspensif') {
+                // Règle : Redevance = Total Taxes Suspendues * Taux (0.25% par défaut)
+                const taux = dossier.taux_caution || 0.0025;
+                dossier.redevance_caution = Math.round(consolidatedTotalTaxes * taux);
+            } else {
+                dossier.redevance_caution = 0;
+            }
 
             // Optionnel : Mettre à jour les totaux du dossier global si besoin
-            // (ex: mise à jour automatique de valeur_cfa basée sur le cours)
             if (dossier.etat_codage?.cours) {
                 const total_fob_usd = updatedArticles.reduce((acc, art) => acc + (Number(art.valeur_fob) || 0), 0);
                 dossier.valeur = total_fob_usd;
