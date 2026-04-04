@@ -123,8 +123,10 @@ exports.getMenuByProfile = async (req, res) => {
         const parentCodes = [...new Set(menusFound.map(m => m.parent).filter(p => p && p !== ""))];
         if (parentCodes.length > 0) {
             const missingParents = await Menu.find({
-                code_menu: { $in: parentCodes },
-                code_menu: { $nin: menusFound.map(m => m.code_menu) }
+                code_menu: { 
+                    $in: parentCodes, 
+                    $nin: menusFound.map(m => m.code_menu) 
+                }
             });
             menusFound = [...menusFound, ...missingParents];
         }
