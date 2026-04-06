@@ -11,9 +11,9 @@ const dossierSchema = new mongoose.Schema({
         default: "aerienne"
     },
     client: { 
-        type: String, 
-        required: true,
-        trim: true 
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: 'acl_clients',
+        required: true
     },
     regime_douanier: { type: String, trim: true },
     num_archivage: { type: String, trim: true },
@@ -101,7 +101,6 @@ const dossierSchema = new mongoose.Schema({
         nbre_jours_restant: { type: Number }
     },
 
-    // 4. APUREMENT (Dynamique / Multiple)
     apurements: [{
         index: { type: Number },
         regime: { type: String }, // nb ou libellé
@@ -109,6 +108,15 @@ const dossierSchema = new mongoose.Schema({
         date_decl: { type: Date },
         qte_apuree: { type: Number },
         libelle: { type: String, trim: true },
+        observation: { type: String, trim: true }
+    }],
+    
+    // 5. DÉPENSES (Suivi financier administratif)
+    depenses: [{
+        index: { type: Number },
+        libelle: { type: String, trim: true },
+        montant: { type: Number, default: 0 },
+        date: { type: Date, default: Date.now },
         observation: { type: String, trim: true }
     }],
 

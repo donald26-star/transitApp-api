@@ -12,7 +12,7 @@ const generateInvoiceNumber = async (type = 'F') => {
 exports.createFromDossier = async (req, res) => {
     try {
         const { dossierCode } = req.params;
-        const dossier = await Dossier.findOne({ code_dossier: dossierCode });
+        const dossier = await Dossier.findOne({ code_dossier: dossierCode }).populate('client');
 
         if (!dossier) {
             return res.status(404).json({ status: false, message: "Dossier non trouvé" });
@@ -25,7 +25,7 @@ exports.createFromDossier = async (req, res) => {
             dossierId: dossierCode,
             dossierInfo: {
                 num_dossier: dossier.num_dossier,
-                client: dossier.client,
+                client: dossier.client?.importateur || dossier.client,
                 awb_bl: dossier.awb_bl,
                 colis: dossier.nb_colis,
                 poids: dossier.poids_brut,

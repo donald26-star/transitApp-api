@@ -21,9 +21,13 @@ exports.registerDossier = async (req, res) => {
 
         const dossier = new Dossier(dossierData);
         await dossier.save();
+        await dossier.populate('client');
 
         // --- AUDIT ---
-        await logAction(req, 'CREATE', 'DOSSIER', { num_dossier: dossier.num_dossier, client: dossier.client });
+        await logAction(req, 'CREATE', 'DOSSIER', { 
+            num_dossier: dossier.num_dossier, 
+            client: dossier.client?.importateur || dossier.client 
+        });
 
         // --- NOTIFICATION ---
         try {
@@ -32,7 +36,7 @@ exports.registerDossier = async (req, res) => {
                 await createNotificationInternal(
                     admin.token, 
                     "Nouveau Dossier", 
-                    `Le dossier ${dossier.num_dossier} pour le client ${dossier.client} a été ouvert.`,
+                    `Le dossier ${dossier.num_dossier} pour le client ${dossier.client?.importateur || 'N/A'} a été ouvert.`,
                     'success',
                     { dossierCode: dossier.code_dossier }
                 );
@@ -61,7 +65,7 @@ exports.getDossierInfo = async (req, res) => {
     try {
         const code_dossier = req.params.code_dossier;
 
-        const dossier = await Dossier.findOne({ code_dossier: code_dossier });
+        const dossier = await Dossier.findOne({ code_dossier: code_dossier }).populate('client');
         if (!dossier) {
             return res.status(404).json({ 
                 status: false,
@@ -88,7 +92,7 @@ exports.getDossierInfo = async (req, res) => {
 exports.getDossierListe = async (req, res) => {
     try {
         // Optionnel : ajouter des filtres (corbeille, status, etc.)
-        const dossiers = await Dossier.find({ corbeille: '0' }).sort({ createdAt: -1 });
+        const dossiers = await Dossier.find({ corbeille: '0' }).populate('client').sort({ createdAt: -1 });
 
         const formattedDossiers = dossiers.map((d, index) => ({
             ...d.formatResponse(),
@@ -140,6 +144,7 @@ exports.updateDossier = async (req, res) => {
         }
 
         await dossier.save();
+        await dossier.populate('client');
 
         // --- AUDIT ---
         await logAction(req, 'UPDATE', 'DOSSIER', { 
@@ -154,7 +159,7 @@ exports.updateDossier = async (req, res) => {
                 await createNotificationInternal(
                     admin.token, 
                     "Mise à jour Dossier", 
-                    `Le dossier ${dossier.num_dossier} (${dossier.client}) a été mis à jour par un collaborateur.`,
+                    `Le dossier ${dossier.num_dossier} (${dossier.client?.importateur || 'N/A'}) a été mis à jour par un collaborateur.`,
                     'info',
                     { dossierCode: dossier.code_dossier }
                 );
@@ -214,7 +219,7 @@ exports.deleteDossier = async (req, res) => {
 // UPDATE OPERATION (FICHE OPÉRATRICE / ÉTAT DE CODAGE)
 exports.updateOperation = async (req, res) => {
     try {
-        const { code_dossier, etat_codage, articles, regime_fiscal } = req.body;
+        const { code_dossier, etat_codage, articles, regime_fiscal, regime_douanier } = req.body;
 
         const dossier = await Dossier.findOne({ code_dossier: code_dossier });
         if (!dossier) {
@@ -225,12 +230,16 @@ exports.updateOperation = async (req, res) => {
             });
         }
 
-        // Mettre à jour l'état de codage et le régime fiscal
+        // Mettre à jour l'état de codage et les régimes
         if (etat_codage) {
-            dossier.etat_codage = { ...dossier.etat_codage, ...etat_codage };
+            // Utiliser Object.assign pour préserver les getters/setters Mongoose et s'assurer de capturer tous les sous-champs
+            dossier.etat_codage = { ...dossier.etat_codage.toObject(), ...etat_codage };
         }
         if (regime_fiscal) {
             dossier.regime_fiscal = regime_fiscal;
+        }
+        if (regime_douanier) {
+            dossier.regime_douanier = regime_douanier;
         }
 
         // Mettre à jour les articles et recalculer les totaux par article
