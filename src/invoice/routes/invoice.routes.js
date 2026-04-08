@@ -13,6 +13,7 @@ router.put('/:id', invoiceController.updateInvoice);
 router.get('/', invoiceController.getInvoices);
 router.get('/:id', invoiceController.getInvoiceById);
 router.get('/:id/render', invoiceController.renderInvoice);
+router.post('/:id/send-email', invoiceController.sendInvoiceEmail);
 
 module.exports = router;
 

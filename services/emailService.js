@@ -22,14 +22,16 @@ const transporter = nodemailer.createTransport({
  * @param {string} to - Destinataire(s)
  * @param {string} subject - Sujet de l'email
  * @param {string} html - Contenu HTML (ton template chargé)
+ * @param {Array} attachments - Tableau de pièces jointes optionnelles (format nodemailer)
  */
-exports.sendEmail = async (to, subject, html) => {
+exports.sendEmail = async (to, subject, html, attachments = []) => {
     try {
         const mailOptions = {
             from: '"Avelo App" <info@aveloapp.com>',
             to: to,
             subject: subject,
-            html: html
+            html: html,
+            attachments: attachments
         };
 
         const info = await transporter.sendMail(mailOptions);

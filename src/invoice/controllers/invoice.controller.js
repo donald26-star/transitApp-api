@@ -31,28 +31,29 @@ exports.createFromDossier = async (req, res) => {
             dossierInfo: {
                 num_dossier: dossier.num_dossier,
                 client: dossier.client?.importateur || dossier.client,
-                awb_bl: dossier.awb_bl,
-                colis: dossier.nb_colis,
-                nb_colis: dossier.nb_colis,
-                poids: dossier.poids_brut,
-                poids_brut: dossier.poids_brut,
-                volume: dossier.volume,
-                description: dossier.description_marchandise,
-                provenance: dossier.station_depart,
-                valeur_fob_xof: dossier.valeur_fob_xof,
-                valeur_fret_xof: dossier.valeur_fret_xof,
-                valeur_assurance_xof: dossier.valeur_assurance_xof,
-                assurance_totale: dossier.assurance_totale,
-                valeur_caf_xof: dossier.valeur_caf_xof || dossier.total_valeur_caf,
-                valeur_cfa: dossier.valeur_cfa,
-                valeur: dossier.valeur,
-                expediteur: dossier.expediteur?.nom_expediteur || dossier.expediteur?.nomEtPrenoms || dossier.expediteur,
+                awb_bl: dossier.awb_bl || dossier.lta || dossier.manifeste?.num_lta,
+                colis: dossier.nb_colis || dossier.manifeste?.nb_colis || 0,
+                nb_colis: dossier.nb_colis || dossier.manifeste?.nb_colis || 0,
+                poids: dossier.poids_brut || dossier.manifeste?.pb || 0,
+                poids_brut: dossier.poids_brut || dossier.manifeste?.pb || 0,
+                volume: dossier.volume || 0,
+                description: dossier.description_marchandise || dossier.manifeste?.description_marchandise,
+                provenance: dossier.station_depart || dossier.aeroport,
+                valeur_fob_xof: dossier.articles?.reduce((acc, a) => acc + (a.valeur_fob || 0), 0) || 0,
+                valeur_fret_xof: dossier.articles?.reduce((acc, a) => acc + (a.fret || 0), 0) || 0,
+                valeur_assurance_xof: dossier.articles?.reduce((acc, a) => acc + (a.assurance || 0), 0) || 0,
+                assurance_totale: dossier.articles?.reduce((acc, a) => acc + (a.assurance || 0), 0) || 0,
+                valeur_caf_xof: dossier.total_valeur_caf || dossier.articles?.reduce((acc, a) => acc + (a.valeur_caf || 0), 0) || 0,
+                valeur_cfa: dossier.valeur_cfa || 0,
+                valeur: dossier.valeur || 0,
+                expediteur: dossier.expediteur?.nom || dossier.expediteur?.nom_expediteur || dossier.expediteur?.nomEtPrenoms || dossier.expediteur,
                 incoterm: dossier.incoterm,
                 regime_douanier: dossier.regime_douanier,
                 bureau_douane: dossier.etat_codage?.bureau_douane,
                 type_voie: dossier.type_voie,
                 date_arrivee: dossier.date_arrivee,
-                devise: dossier.devise
+                devise: dossier.devise,
+                client_email: dossier.client?.email
             },
             // Initialiser les sections avec les données du dossier (Fiche Opératrice)
             douaneTaxes: { 
@@ -100,6 +101,9 @@ exports.updateInvoice = async (req, res) => {
         const { id } = req.params;
         const data = req.body;
 
+        // Update dossierInfo if necessary or provide a way to sync it?
+        // Let's only update standard modifiable invoice fields in this controller.
+        
         // --- CALCULS ---
         // 1. Douane HT & Total
         const dt = data.douaneTaxes || {};
@@ -158,6 +162,52 @@ exports.getInvoices = async (req, res) => {
 exports.getInvoiceById = async (req, res) => {
     try {
         const invoice = await Invoice.findById(req.params.id);
+        
+        if (invoice) {
+            // Retro-fit to fix any empty fields dynamically from Dossier without overwriting invoice number
+            const dossier = await Dossier.findOne({ code_dossier: invoice.dossierId }).populate('client').populate('expediteur');
+            
+            if (dossier) {
+                let updated = false;
+                
+                const safeUpdate = (field, dValue) => {
+                    if (!invoice.dossierInfo[field] && dValue !== undefined && dValue !== null && dValue !== 0 && dValue !== '0' && dValue !== '---') {
+                        invoice.dossierInfo[field] = dValue;
+                        updated = true;
+                    }
+                };
+
+                const val_fob = dossier.articles?.reduce((acc, a) => acc + (a.valeur_fob || 0), 0) || 0;
+                const val_fret = dossier.articles?.reduce((acc, a) => acc + (a.fret || 0), 0) || 0;
+                const val_ass = dossier.articles?.reduce((acc, a) => acc + (a.assurance || 0), 0) || 0;
+                const val_caf = dossier.total_valeur_caf || dossier.articles?.reduce((acc, a) => acc + (a.valeur_caf || 0), 0) || 0;
+
+                safeUpdate('awb_bl', dossier.awb_bl || dossier.lta || dossier.manifeste?.num_lta);
+                safeUpdate('colis', dossier.nb_colis || dossier.manifeste?.nb_colis);
+                safeUpdate('nb_colis', dossier.nb_colis || dossier.manifeste?.nb_colis);
+                safeUpdate('poids', dossier.poids_brut || dossier.manifeste?.pb);
+                safeUpdate('poids_brut', dossier.poids_brut || dossier.manifeste?.pb);
+                safeUpdate('volume', dossier.volume);
+                safeUpdate('description', dossier.description_marchandise || dossier.manifeste?.description_marchandise);
+                safeUpdate('provenance', dossier.station_depart || dossier.aeroport);
+                safeUpdate('date_arrivee', dossier.date_arrivee);
+                safeUpdate('valeur_fob_xof', val_fob);
+                safeUpdate('valeur_fret_xof', val_fret);
+                safeUpdate('valeur_assurance_xof', val_ass);
+                safeUpdate('assurance_totale', val_ass);
+                safeUpdate('valeur_caf_xof', val_caf);
+                safeUpdate('valeur_cfa', dossier.valeur_cfa);
+                safeUpdate('valeur', dossier.valeur);
+                safeUpdate('expediteur', dossier.expediteur?.nom || dossier.expediteur?.nom_expediteur || dossier.expediteur?.nomEtPrenoms || dossier.expediteur);
+                safeUpdate('client', dossier.client?.importateur || dossier.client);
+                safeUpdate('client_email', dossier.client?.email);
+
+                if (updated) {
+                    await invoice.save();
+                }
+            }
+        }
+
         res.status(200).json({ status: true, data: invoice });
     } catch (error) {
         res.status(500).json({ status: false, message: error.message });
@@ -167,9 +217,47 @@ exports.getInvoiceById = async (req, res) => {
 // RENDER INVOICE AS HTML
 exports.renderInvoice = async (req, res) => {
     try {
-        const invoice = await Invoice.findById(req.params.id);
+        let invoice = await Invoice.findById(req.params.id);
         if (!invoice) {
             return res.status(404).send("Facture non trouvée");
+        }
+
+        const dossier = await Dossier.findOne({ code_dossier: invoice.dossierId }).populate('client').populate('expediteur');
+        if (dossier) {
+            let updated = false;
+            
+            const safeUpdate = (field, dValue) => {
+                if (!invoice.dossierInfo[field] && dValue !== undefined && dValue !== null && dValue !== 0 && dValue !== '0' && dValue !== '---') {
+                    invoice.dossierInfo[field] = dValue;
+                    updated = true;
+                }
+            };
+
+            const val_fob = dossier.articles?.reduce((acc, a) => acc + (a.valeur_fob || 0), 0) || 0;
+            const val_fret = dossier.articles?.reduce((acc, a) => acc + (a.fret || 0), 0) || 0;
+            const val_ass = dossier.articles?.reduce((acc, a) => acc + (a.assurance || 0), 0) || 0;
+            const val_caf = dossier.total_valeur_caf || dossier.articles?.reduce((acc, a) => acc + (a.valeur_caf || 0), 0) || 0;
+
+            safeUpdate('awb_bl', dossier.awb_bl || dossier.lta || dossier.manifeste?.num_lta);
+            safeUpdate('colis', dossier.nb_colis || dossier.manifeste?.nb_colis);
+            safeUpdate('nb_colis', dossier.nb_colis || dossier.manifeste?.nb_colis);
+            safeUpdate('poids', dossier.poids_brut || dossier.manifeste?.pb);
+            safeUpdate('poids_brut', dossier.poids_brut || dossier.manifeste?.pb);
+            safeUpdate('date_arrivee', dossier.date_arrivee);
+            safeUpdate('valeur_fob_xof', val_fob);
+            safeUpdate('valeur_fret_xof', val_fret);
+            safeUpdate('valeur_assurance_xof', val_ass);
+            safeUpdate('assurance_totale', val_ass);
+            safeUpdate('valeur_caf_xof', val_caf);
+            safeUpdate('valeur_cfa', dossier.valeur_cfa);
+            safeUpdate('valeur', dossier.valeur);
+            safeUpdate('expediteur', dossier.expediteur?.nom || dossier.expediteur?.nom_expediteur || dossier.expediteur?.nomEtPrenoms || dossier.expediteur);
+            safeUpdate('client', dossier.client?.importateur || dossier.client);
+            safeUpdate('client_email', dossier.client?.email);
+
+            if (updated) {
+                invoice = await invoice.save();
+            }
         }
 
         const html = InvoiceGenerator.generateHTML(invoice);
@@ -177,5 +265,67 @@ exports.renderInvoice = async (req, res) => {
         res.send(html);
     } catch (error) {
         res.status(500).send(error.message);
+    }
+};
+
+// SEND INVOICE BY EMAIL
+exports.sendInvoiceEmail = async (req, res) => {
+    try {
+        const emailService = require('../../../services/emailService');
+        const { email } = req.body;
+        
+        let invoice = await Invoice.findById(req.params.id);
+        if (!invoice) return res.status(404).json({ status: false, message: "Facture non trouvée" });
+
+        const htmlContent = InvoiceGenerator.generateHTML(invoice);
+        
+        const destinataire = email || invoice.dossierInfo?.client_email || 'N/A';
+        if (destinataire === 'N/A' || !destinataire.includes('@')) {
+            return res.status(400).json({ status: false, message: "Adresse email du client invalide ou introuvable." });
+        }
+
+        let attachments = [];
+        
+        try {
+            // Tentative de génération de PDF si html-pdf-node est installé
+            const htmlPdfNode = require('html-pdf-node');
+            let options = { format: 'A4', printBackground: true, pageRanges: '1' };
+            let file = { content: htmlContent };
+            
+            const pdfBuffer = await htmlPdfNode.generatePdf(file, options);
+            attachments.push({
+                filename: `Facture_${invoice.invoiceNumber}.pdf`,
+                content: pdfBuffer,
+                contentType: 'application/pdf'
+            });
+        } catch (e) {
+            console.log("Impossible de générer le PDF avec html-pdf-node, envoi du mail sous format HTML sans pièce jointe.", e.message);
+        }
+
+        const nomClient = invoice.dossierInfo?.client || 'Cher(e) Partenaire';
+        const typeFacture = invoice.type === 'proforma' ? 'Proforma' : 'Définitive';
+        const numAwb = invoice.dossierInfo?.awb_bl || invoice.dossierInfo?.num_dossier || 'N/A';
+        
+        const subject = `Votre facture ${typeFacture} - ${invoice.invoiceNumber}`;
+        const emailBodyHtml = `
+            <div style="font-family: Arial, sans-serif; font-size: 14px; color: #333;">
+                <p>Bonjour <b>${nomClient}</b>,</p>
+                <p>Veuillez recevoir ci-joint la facture <b>${typeFacture}</b> concernant votre dossier <b>${numAwb}</b>.</p>
+                <br>
+                <p>Restant à votre entière disposition pour toute information complémentaire.</p>
+                <br>
+                <p>Cordialement,<br>L'équipe GLS</p>
+            </div>
+        `;
+
+        const emailSuccess = await emailService.sendEmail(destinataire, subject, emailBodyHtml, attachments);
+
+        if (emailSuccess) {
+            res.status(200).json({ status: true, message: `Email envoyé avec succès à ${destinataire}` });
+        } else {
+            res.status(500).json({ status: false, message: "Échec de l'envoi de l'email." });
+        }
+    } catch (error) {
+        res.status(500).json({ status: false, message: error.message });
     }
 };
