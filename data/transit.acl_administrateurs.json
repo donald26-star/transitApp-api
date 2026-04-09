@@ -1,0 +1,168 @@
+[{
+  "_id": {
+    "$oid": "69b69aafc3337bee4cc399cf"
+  },
+  "nom": "Donald kouakou",
+  "genre": "Masculin",
+  "telephone": "0767802691",
+  "email": "donaldkouakou24@gmail.com",
+  "password": "$2b$10$t/uCt9xWYB2OnlS0w5iXyuB3V5843/D2SNTTKEtPM1YlfDMNz8OkK",
+  "profile": "PZ6ds3p9VjVpE8kN",
+  "type_compte": "",
+  "status": "1",
+  "corbeille": "0",
+  "status_first_connexion": "1",
+  "photo_profile": {
+    "filename": "admin_1775239403023-LOGO EDJH.PNG",
+    "filetype": "image/png",
+    "filepath": "http://localhost/uploads/profile/admin_1775239403023-LOGO EDJH.PNG"
+  },
+  "token": "WbjZcMJsSpV088JP",
+  "createdAt": {
+    "$date": "2026-03-15T11:40:31.887Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-03T18:03:23.060Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69b69af5a32e6237443378f8"
+  },
+  "nom": "Boga test",
+  "genre": "Masculin",
+  "telephone": "0701020333",
+  "email": "bogatest@gmail.com",
+  "password": "$2b$10$FXoaWzdJRU3kyE6bCNr7CuMLuASpM6Enr/zzQh2y9NG0LE/JrB23i",
+  "profile": "hH0z9FULqQUACVvl",
+  "type_compte": "",
+  "status": "1",
+  "corbeille": "0",
+  "status_first_connexion": "1",
+  "photo_profile": {
+    "filename": null,
+    "filetype": null,
+    "filepath": null
+  },
+  "token": "ayD1Mu4uZ30Ut57o",
+  "createdAt": {
+    "$date": "2026-03-15T11:41:41.632Z"
+  },
+  "updatedAt": {
+    "$date": "2026-03-16T08:46:14.177Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69b7c2e298596c18f01cc53a"
+  },
+  "nom": "Donald kouakou test",
+  "genre": "Masculin",
+  "telephone": "0102030405",
+  "email": "donaldkouakou23@gmail.com",
+  "password": "$2b$10$op2Eq967OaOPtnbCbjfuAua4QVX8vRskqWnourwJxiBkopqN3KHbi",
+  "profile": "hH0z9FULqQUACVvl",
+  "type_compte": "",
+  "status": "1",
+  "corbeille": "1",
+  "status_first_connexion": "0",
+  "photo_profile": {
+    "filename": null,
+    "filetype": null,
+    "filepath": null
+  },
+  "token": "RBGjuUBlecUiLvov",
+  "createdAt": {
+    "$date": "2026-03-16T08:44:18.776Z"
+  },
+  "updatedAt": {
+    "$date": "2026-03-16T08:44:27.866Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69b7dd5998596c18f01cc6b2"
+  },
+  "nom": "Junior Alain",
+  "genre": "Masculin",
+  "telephone": "0101010101",
+  "email": "alain@gmail.com",
+  "password": "$2b$10$4yVjpQGV1f/0EmXHVG6oReqlLLKvL/Nv0hHXlApKS5dEt3N80gVfy",
+  "profile": "V6Upz2A1O0dV9dc1",
+  "type_compte": "",
+  "status": "1",
+  "corbeille": "0",
+  "status_first_connexion": "1",
+  "photo_profile": {
+    "filename": null,
+    "filetype": null,
+    "filepath": null
+  },
+  "token": "u3guafRCgJpBvqJ1",
+  "createdAt": {
+    "$date": "2026-03-16T10:37:13.816Z"
+  },
+  "updatedAt": {
+    "$date": "2026-03-16T10:37:49.007Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69bffe8f170299e09b0afe2b"
+  },
+  "nom": "Donald test",
+  "genre": "Masculin",
+  "telephone": "0102030403",
+  "email": "donaldkouakou20@gmail.com",
+  "password": "$2b$10$W3jbsE.qriTFfPT7rPBkSOu6nZZbBqEn01Pa2uRPMGTlo3jWF11iy",
+  "profile": "PZ6ds3p9VjVpE8kN",
+  "type_compte": "",
+  "status": "1",
+  "corbeille": "1",
+  "status_first_connexion": "0",
+  "photo_profile": {
+    "filename": null,
+    "filetype": null,
+    "filepath": null
+  },
+  "token": "C1wJq2NEhVnWt5C8",
+  "createdAt": {
+    "$date": "2026-03-22T14:37:03.824Z"
+  },
+  "updatedAt": {
+    "$date": "2026-03-22T14:37:30.183Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69cfb41c27ffa8c1cdc5c33c"
+  },
+  "nom": "Administrateur",
+  "genre": "Masculin",
+  "telephone": "0102030102",
+  "email": "test113@gmail.com",
+  "password": "$2b$10$KWZgSgU7NqJpsSpCDR5Z8OtDLDUhX0R9mOQ1AhLH2oCpkIa1CvFkK",
+  "profile": "hH0z9FULqQUACVvl",
+  "type_compte": "",
+  "status": "1",
+  "corbeille": "0",
+  "status_first_connexion": "1",
+  "photo_profile": {
+    "filename": null,
+    "filetype": null,
+    "filepath": null
+  },
+  "token": "QHzAyuxTWnBr9XZe",
+  "createdAt": {
+    "$date": "2026-04-03T12:35:40.327Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-04T09:37:22.719Z"
+  },
+  "__v": 0
+}]

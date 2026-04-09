@@ -1,0 +1,237 @@
+[{
+  "_id": {
+    "$oid": "69b6a8a6406c15a779a199ce"
+  },
+  "profil": "PZ6ds3p9VjVpE8kN",
+  "menuList": [
+    {
+      "code": "1eSqY49eTGuIxgzL",
+      "actions": [
+        "add",
+        "edit",
+        "delete"
+      ]
+    },
+    {
+      "code": "YbBiOVL9I3gGCSwW",
+      "actions": [
+        "add",
+        "edit",
+        "delete"
+      ]
+    },
+    {
+      "code": "f6RTbcr22X3I31NR",
+      "actions": [
+        "add",
+        "edit",
+        "delete"
+      ]
+    },
+    {
+      "code": "6LCpm413Ksrqg6GZ",
+      "actions": []
+    },
+    {
+      "code": "7TNmVRMCM2aKw2HU",
+      "actions": [
+        "add",
+        "edit",
+        "delete"
+      ]
+    },
+    {
+      "code": "cjLdohCEjFRuuovC",
+      "actions": [
+        "add",
+        "edit",
+        "delete"
+      ]
+    },
+    {
+      "code": "enOXvbmE13cUqo3J",
+      "actions": [
+        "add",
+        "edit",
+        "delete"
+      ]
+    },
+    {
+      "code": "menu_dossiers",
+      "actions": []
+    },
+    {
+      "code": "RGKdxVHZzlCDRdVk",
+      "actions": [
+        "add",
+        "edit",
+        "delete"
+      ]
+    },
+    {
+      "code": "7utItxJIsvHEs4Ly",
+      "actions": [
+        "add",
+        "edit",
+        "delete"
+      ]
+    },
+    {
+      "code": "PvXLrXO2vlcw4u4D",
+      "actions": []
+    },
+    {
+      "code": "CukdZ8IFvoUgw1RJ",
+      "actions": [
+        "add",
+        "edit",
+        "delete"
+      ]
+    },
+    {
+      "code": "yidQXivhDl85f70m",
+      "actions": [
+        "add",
+        "edit",
+        "delete"
+      ]
+    },
+    {
+      "code": "6ZNtB6nu4oqUOiw1",
+      "actions": [
+        "add",
+        "delete",
+        "edit"
+      ]
+    },
+    {
+      "code": "Kcjh5FQLeWXrHF8i",
+      "actions": [
+        "add",
+        "edit",
+        "delete"
+      ]
+    }
+  ],
+  "commentaire": "test edit",
+  "status": "1",
+  "corbeille": "0",
+  "code_droit": "XCULTz9pXPtHWtRy",
+  "createdAt": {
+    "$date": "2026-03-15T12:40:06.925Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-08T23:37:37.574Z"
+  },
+  "__v": 20
+},
+{
+  "_id": {
+    "$oid": "69b7ba7598596c18f01cc475"
+  },
+  "profil": "hH0z9FULqQUACVvl",
+  "menuList": [
+    {
+      "code": "6LCpm413Ksrqg6GZ",
+      "actions": []
+    },
+    {
+      "code": "f6RTbcr22X3I31NR",
+      "actions": [
+        "add",
+        "edit",
+        "delete"
+      ]
+    },
+    {
+      "code": "cjLdohCEjFRuuovC",
+      "actions": [
+        "add",
+        "edit",
+        "delete"
+      ]
+    }
+  ],
+  "commentaire": "",
+  "status": "1",
+  "corbeille": "0",
+  "code_droit": "TtR8UY1dDV6lvEC4",
+  "createdAt": {
+    "$date": "2026-03-16T08:08:21.915Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-04T09:36:49.745Z"
+  },
+  "__v": 2
+},
+{
+  "_id": {
+    "$oid": "69b7bccc98596c18f01cc4c0"
+  },
+  "profil": "5ThxfMXuYBCLO3qt",
+  "menuList": [
+    "1eSqY49eTGuIxgzL, YbBiOVL9I3gGCSwW"
+  ],
+  "commentaire": "",
+  "status": "1",
+  "corbeille": "0",
+  "code_droit": "Y8pldxms5Pg5QbVL",
+  "createdAt": {
+    "$date": "2026-03-16T08:18:20.629Z"
+  },
+  "updatedAt": {
+    "$date": "2026-03-16T08:18:20.629Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69b7dd0f98596c18f01cc6a2"
+  },
+  "profil": "V6Upz2A1O0dV9dc1",
+  "menuList": [
+    "f6RTbcr22X3I31NR"
+  ],
+  "commentaire": "",
+  "status": "1",
+  "corbeille": "0",
+  "code_droit": "u9I7lz91GH5xJi99",
+  "createdAt": {
+    "$date": "2026-03-16T10:35:59.474Z"
+  },
+  "updatedAt": {
+    "$date": "2026-03-16T10:38:12.488Z"
+  },
+  "__v": 1
+},
+{
+  "_id": {
+    "$oid": "69cfb44f27ffa8c1cdc5c35e"
+  },
+  "profil": "smGaI6Z4YUMnSVAR",
+  "menuList": [
+    {
+      "code": "6LCpm413Ksrqg6GZ",
+      "actions": []
+    },
+    {
+      "code": "f6RTbcr22X3I31NR",
+      "actions": []
+    },
+    {
+      "code": "cjLdohCEjFRuuovC",
+      "actions": []
+    }
+  ],
+  "commentaire": "",
+  "status": "1",
+  "corbeille": "0",
+  "code_droit": "Y9LnlBXZy7ienjtR",
+  "createdAt": {
+    "$date": "2026-04-03T12:36:31.195Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-04T09:29:25.018Z"
+  },
+  "__v": 4
+}]

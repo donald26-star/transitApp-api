@@ -1,0 +1,48 @@
+[{
+  "_id": {
+    "$oid": "69b68d385a2615e034101feb"
+  },
+  "designation": "super-admin",
+  "actions": [
+    "add, edit, delete"
+  ],
+  "visibilite": [
+    "PZ6ds3p9VjVpE8kN"
+  ],
+  "type_accueil": "*",
+  "bloc_visible": [],
+  "status": "1",
+  "corbeille": "0",
+  "code_profile": "PZ6ds3p9VjVpE8kN",
+  "createdAt": {
+    "$date": "2026-03-15T10:43:04.682Z"
+  },
+  "updatedAt": {
+    "$date": "2026-03-16T09:20:02.687Z"
+  },
+  "__v": 4
+},
+{
+  "_id": {
+    "$oid": "69b7ba6798596c18f01cc470"
+  },
+  "designation": "admin",
+  "actions": [
+    "add, edit, delete"
+  ],
+  "visibilite": [
+    "PZ6ds3p9VjVpE8kN, hH0z9FULqQUACVvl"
+  ],
+  "type_accueil": "*",
+  "bloc_visible": [],
+  "status": "1",
+  "corbeille": "0",
+  "code_profile": "hH0z9FULqQUACVvl",
+  "createdAt": {
+    "$date": "2026-03-16T08:08:07.169Z"
+  },
+  "updatedAt": {
+    "$date": "2026-03-16T09:19:36.856Z"
+  },
+  "__v": 1
+}]

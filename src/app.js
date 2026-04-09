@@ -28,12 +28,15 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'X-Api-Key', 'Authorization'] // Autorise ton header personnalisé et le JWT
 }));
 
+// Route par défaut
+app.get('/', (req, res) => {
+    res.send('AKWABA sur l\'API transit V1 !');
+});
+
 // Middlewares
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(verifyApiKey);
-
-
 
 // Routes
 app.use('/api/admin', adminRoute); // ROUTES ADMINISTRATEUR
@@ -52,10 +55,5 @@ app.use('/api/nomenclature', nomenclatureRoute); // ROUTES NOMENCLATURE / TEC CE
 app.use('/api/devise', deviseRoute); // ROUTES DEVISES
 app.use('/api/expediteur', expediteurRoute); // ROUTES EXPEDITEURS
 app.use('/api/type_depense', typeDepenseRoute); // ROUTES TYPES DEPENSES
-
-// Route par défaut
-app.get('/', (req, res) => {
-    res.send('AKWABA sur l\'API transit V1 !');
-});
 
 module.exports = app;
