@@ -8,7 +8,7 @@ const formatCurrencyWithDecimals = (amount) => {
     return new Intl.NumberFormat('fr-CI', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount || 0);
 };
 
-const maritimeInvoiceTemplate = (invoice) => {
+const maritimeInvoiceTemplate = (invoice, config = null) => {
     const isProforma = invoice.type === 'proforma';
     const title = isProforma ? 'FACTURE PROFORMA' : 'FACTURE DÉFINITIVE';
     const primaryColor = '#0055a4'; // Bleu Maritime
@@ -37,7 +37,7 @@ const maritimeInvoiceTemplate = (invoice) => {
             min-height: 297mm;
             margin: 10mm auto;
             background: #fff;
-            padding: 10mm;
+            padding: 10mm 10mm 30mm 10mm;
             box-sizing: border-box;
             position: relative;
         }
@@ -86,9 +86,9 @@ const maritimeInvoiceTemplate = (invoice) => {
             margin-bottom: 5px;
         }
 
-        .red-bar {
+        .invoice-number-bar {
             height: 15px;
-            background: #ff0000;
+            background: ${primaryColor};
             width: 180px;
             margin: 5px 0;
             display: flex;
@@ -214,7 +214,17 @@ const maritimeInvoiceTemplate = (invoice) => {
         .net-to-pay { background: #cccccc; font-size: 14px; padding: 8px 5px; }
 
         .footer-text { margin-top: 20px; font-size: 8px; text-align: justify; }
-        .company-footer { margin-top: 30px; text-align: center; font-size: 7px; border-top: 1px solid #ccc; padding-top: 5px; color: #666; }
+        .company-footer {
+            position: absolute;
+            bottom: 5mm;
+            left: 10mm;
+            right: 10mm;
+            text-align: center;
+            font-size: 8px;
+            border-top: 1px solid #ccc;
+            padding-top: 5px;
+            color: #444;
+        }
 
         @media print {
             body { background: #fff; }
@@ -240,7 +250,7 @@ const maritimeInvoiceTemplate = (invoice) => {
 
         <div class="main-layout">
             <div class="sidebar">
-                <div class="red-bar">${invoice.type === 'proforma' ? '0' : invoice.invoiceNumber}</div>
+                <div class="invoice-number-bar">${invoice.invoiceNumber || '---'}</div>
 
                 <div class="sidebar-box">
                     <div class="sidebar-header">B/L</div>
@@ -346,7 +356,7 @@ const maritimeInvoiceTemplate = (invoice) => {
         </div>
 
         <div class="company-footer">
-            GENERAL LOGISTICS SYSTEMS SARL - FRET MARITIME
+            ${config?.footer || `GENERAL LOGISTICS SYSTEMS SARL - FRET MARITIME`}
         </div>
     </div>
 </body>

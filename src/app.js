@@ -19,6 +19,7 @@ const nomenclatureRoute = require('./nomenclature/routes/nomenclature.routes');
 const deviseRoute = require('./devise/routes/devise.route');
 const expediteurRoute = require('./expediteur/routes/expediteur.route');
 const typeDepenseRoute = require('./type_depense/routes/type_depense.routes');
+const incotermRoute = require('./incoterm/routes/incoterm.routes');
 
 const app = express();
 
@@ -65,5 +66,6 @@ app.use('/api/nomenclature', nomenclatureRoute); // ROUTES NOMENCLATURE / TEC CE
 app.use('/api/devise', deviseRoute); // ROUTES DEVISES
 app.use('/api/expediteur', expediteurRoute); // ROUTES EXPEDITEURS
 app.use('/api/type_depense', typeDepenseRoute); // ROUTES TYPES DEPENSES
+app.use('/api/incoterm', incotermRoute); // ROUTES INCOTERMS
 
 module.exports = app;

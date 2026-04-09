@@ -10,21 +10,18 @@ class InvoiceGenerator {
      * @param {Object} invoice - L'objet facture (DB)
      * @returns {string} - Le HTML généré
      */
-    static generateHTML(invoice) {
+    static generateHTML(invoice, config = null) {
         if (!invoice) throw new Error("Facture non fournie");
 
         const typeVoie = invoice.dossierInfo?.type_voie?.toLowerCase();
         
-        // La distinction Proforma / Définitive est gérée à l'intérieur des templates
-        // via le champ invoice.type ('proforma' ou 'final')
-        
         if (typeVoie === 'aerienne' || typeVoie === 'air') {
-            return airInvoiceTemplate(invoice);
+            return airInvoiceTemplate(invoice, config);
         } else if (typeVoie === 'maritime' || typeVoie === 'mer') {
-            return maritimeInvoiceTemplate(invoice);
+            return maritimeInvoiceTemplate(invoice, config);
         } else {
-            // Par défaut on utilise le template Air (le plus complet)
-            return airInvoiceTemplate(invoice);
+            // Par défaut on utilise le template Air
+            return airInvoiceTemplate(invoice, config);
         }
     }
 

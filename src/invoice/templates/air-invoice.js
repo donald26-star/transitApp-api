@@ -8,7 +8,7 @@ const formatCurrencyWithDecimals = (amount) => {
     return new Intl.NumberFormat('fr-CI', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount || 0);
 };
 
-const airInvoiceTemplate = (invoice) => {
+const airInvoiceTemplate = (invoice, config = null) => {
     const isProforma = invoice.type === 'proforma';
     const title = isProforma ? 'FACTURE PROFORMA' : 'FACTURE DÉFINITIVE';
     const primaryColor = '#00a651'; // Le vert du logo GLS
@@ -37,7 +37,7 @@ const airInvoiceTemplate = (invoice) => {
             min-height: 297mm;
             margin: 10mm auto;
             background: #fff;
-            padding: 10mm;
+            padding: 10mm 10mm 30mm 10mm;
             box-sizing: border-box;
             position: relative;
         }
@@ -86,9 +86,9 @@ const airInvoiceTemplate = (invoice) => {
             margin-bottom: 5px;
         }
 
-        .red-bar {
+        .invoice-number-bar {
             height: 15px;
-            background: #ff0000;
+            background: ${primaryColor};
             width: 180px;
             margin: 5px 0;
             display: flex;
@@ -238,12 +238,15 @@ const airInvoiceTemplate = (invoice) => {
         }
 
         .company-footer {
-            margin-top: 30px;
+            position: absolute;
+            bottom: 5mm;
+            left: 10mm;
+            right: 10mm;
             text-align: center;
-            font-size: 7px;
+            font-size: 8px;
             border-top: 1px solid #ccc;
             padding-top: 5px;
-            color: #666;
+            color: #444;
         }
 
         @media print {
@@ -271,7 +274,7 @@ const airInvoiceTemplate = (invoice) => {
         <div class="main-layout">
             <!-- SIDEBAR -->
             <div class="sidebar">
-                <div class="red-bar">${invoice.type === 'proforma' ? '0' : invoice.invoiceNumber}</div>
+                <div class="invoice-number-bar">${invoice.invoiceNumber || '---'}</div>
 
                 <div class="sidebar-box">
                     <div class="sidebar-header">AWB</div>
@@ -583,10 +586,12 @@ const airInvoiceTemplate = (invoice) => {
         </div>
 
         <div class="company-footer">
-            GENERAL LOGISTICS SYSTEMS SARL<br>
-            SIEGE: PORT BOUET - ZONE AERO PORTUAIRE - Capital: 1 000 000 F CFA - 12 BP 2417 Abidjan 12 - CC N : 1744243 P<br>
-            RCCM N : CI-ABJ-2017-B-24986 - Tél: 225 07469346 / 40191207 - E-mail : gls.ci@yahoo.com<br>
-            BANK OF AFRICA N : CI032 01023 009385030005 85
+            ${config?.footer || `
+                GENERAL LOGISTICS SYSTEMS SARL<br>
+                SIEGE: PORT BOUET - ZONE AERO PORTUAIRE - Capital: 1 000 000 F CFA - 12 BP 2417 Abidjan 12 - CC N : 1744243 P<br>
+                RCCM N : CI-ABJ-2017-B-24986 - Tél: 225 07469346 / 40191207 - E-mail : gls.ci@yahoo.com<br>
+                BANK OF AFRICA N : CI032 01023 009385030005 85
+            `}
         </div>
     </div>
 </body>

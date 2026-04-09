@@ -1,0 +1,31 @@
+      LISTE INCOTERMS
+
+
+CFR                 COUT ET FRET
+
+CIF           COUT, ASSURANCE ET FRET
+
+CIP          PORT ET ASSURANCE PAYES
+
+CPT              PORT PAYE JUSQU’À
+
+DAF            RENDU A LA FRONTIERE
+
+DAP         RENDU AU LIEU DE DESTINATION
+
+DDP           RENDU DROITS ACQUITTES
+
+DDU              RENDU DROITS DUS
+
+DEQ                RENDU A QUAI
+
+DES            RENDU NON DECHARGE
+
+EXW              EN USINE, A L'USINE
+
+FAS         FRANCO LE LONG DU NAVIRE
+
+FCA            FRANCO TRANSPORTEUR
+
+FOB               FRANCO A BORD
+

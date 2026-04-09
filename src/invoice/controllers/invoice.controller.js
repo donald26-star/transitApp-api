@@ -1,6 +1,7 @@
 const { Invoice } = require('../models/invoice.model');
 const { Dossier } = require('../../dossier/models/dossier.model');
 const InvoiceGenerator = require('../services/invoice-generator');
+const { InvoiceConfig } = require('../models/invoiceConfig.model');
 
 // GENERATE NEXT INVOICE NUMBER
 const generateInvoiceNumber = async (type = 'F') => {
@@ -23,6 +24,21 @@ exports.createFromDossier = async (req, res) => {
         }
 
         const invoiceNumber = await generateInvoiceNumber();
+
+        // Mapping intelligent des dépenses du dossier vers les débours de la facture
+        const dossierDepenses = dossier.depenses || [];
+        let totalAutresDepenses = 0;
+        let magasinageDossier = 0;
+
+        dossierDepenses.forEach(d => {
+            const lib = (d.libelle || "").toLowerCase();
+            const m = d.montant || 0;
+            if (lib.includes('magasinage')) {
+                magasinageDossier += m;
+            } else {
+                totalAutresDepenses += m;
+            }
+        });
 
         const invoiceData = {
             invoiceNumber,
@@ -66,37 +82,23 @@ exports.createFromDossier = async (req, res) => {
                 rpi: dossier.etat_codage?.rpi || 0,
                 tva_douane: dossier.articles?.reduce((acc, a) => acc + (a.tva || 0), 0) || 0 
             },
-        // Mapping intelligent des dépenses du dossier vers les débours de la facture
-        const dossierDepenses = dossier.depenses || [];
-        let totalAutresDepenses = 0;
-        let magasinageDossier = 0;
+            debours: { 
+                agio: 0, 
+                gestion_credit: 0, 
+                passage_douane: 0,
+                magasinage: magasinageDossier,
+                autres: totalAutresDepenses,
+                // Automatisme : Caution 0.25% du total des taxes pour les régimes spéciaux
+                caution: ['D56', 'D18', '3000', '5000', '7000', 'S106'].includes(dossier.regime_douanier) 
+                    ? Math.round((dossier.total_taxes_dossier || 0) * 0.0025) 
+                    : 0
+            },
 
-        dossierDepenses.forEach(d => {
-            const lib = (d.libelle || "").toLowerCase();
-            const m = d.montant || 0;
-            if (lib.includes('magasinage')) {
-                magasinageDossier += m;
-            } else {
-                totalAutresDepenses += m;
+            prestations: { 
+                frais_fixes: 15000, 
+                commission_gestion: 0,
+                had: dossier.type_voie === 'aerienne' ? 10000 : 25000 // Automatisme voie
             }
-        });
-
-        invoiceData.debours = { 
-            agio: 0, 
-            gestion_credit: 0, 
-            passage_douane: 0,
-            magasinage: magasinageDossier,
-            autres: totalAutresDepenses,
-            // Automatisme : Caution 0.25% du total des taxes pour les régimes spéciaux
-            caution: ['D56', 'D18', '3000', '5000', '7000', 'S106'].includes(dossier.regime_douanier) 
-                ? Math.round((dossier.total_taxes_dossier || 0) * 0.0025) 
-                : 0
-        };
-
-        invoiceData.prestations = { 
-            frais_fixes: 15000, 
-            commission_gestion: 0,
-            had: dossier.type_voie === 'aerienne' ? 10000 : 25000 // Automatisme voie
         };
 
         // --- CALCULS INITIAUX ---
@@ -305,7 +307,8 @@ exports.renderInvoice = async (req, res) => {
             }
         }
 
-        const html = InvoiceGenerator.generateHTML(invoice);
+        const config = await InvoiceConfig.findOne({ status: "1" });
+        const html = InvoiceGenerator.generateHTML(invoice, config);
         res.setHeader('Content-Type', 'text/html');
         res.send(html);
     } catch (error) {
@@ -322,7 +325,8 @@ exports.sendInvoiceEmail = async (req, res) => {
         let invoice = await Invoice.findById(req.params.id);
         if (!invoice) return res.status(404).json({ status: false, message: "Facture non trouvée" });
 
-        const htmlContent = InvoiceGenerator.generateHTML(invoice);
+        const config = await InvoiceConfig.findOne({ status: "1" });
+        const htmlContent = InvoiceGenerator.generateHTML(invoice, config);
         
         const destinataire = email || invoice.dossierInfo?.client_email || 'N/A';
         if (destinataire === 'N/A' || !destinataire.includes('@')) {
