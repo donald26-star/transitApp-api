@@ -11,4 +11,8 @@ router.put('/update', dossierController.updateDossier);
 router.put('/update-operation', dossierController.updateOperation);
 router.delete('/delete/:code_dossier', dossierController.deleteDossier);
 
+// WORKFLOW & ETATS
+router.get('/etat-dossiers', dossierController.getEtatDossiers);
+router.post('/change-status', dossierController.changeDossierStatus);
+
 module.exports = router;

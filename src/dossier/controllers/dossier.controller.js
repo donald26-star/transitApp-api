@@ -1,5 +1,6 @@
 const { Dossier } = require('../models/dossier.model');
 const { RegimeDouanier } = require('../models/regime.model');
+const { EtatDossier } = require('../models/etat_dossier.model');
 const { createNotificationInternal } = require('../../notification/controllers/notification.controller');
 const { Administrateur } = require('../../admin/models/admin.model');
 const { logAction } = require('../../audit/services/audit.service');
@@ -367,6 +368,87 @@ exports.getRegimes = async (req, res) => {
             status: false,
             message: error.message || 'Une erreur interne est survenue.',
             data: []
+        });
+    }
+};
+
+// GET ALL ETATS DOSSIER
+exports.getEtatDossiers = async (req, res) => {
+    try {
+        const etats = await EtatDossier.find({ status: '1' }).sort({ ordre: 1 });
+        res.status(200).json({
+            status: true,
+            message: 'Succès.',
+            data: etats
+        });
+    } catch (error) {
+        res.status(500).json({ 
+            status: false,
+            message: error.message || 'Une erreur interne est survenue.',
+            data: []
+        });
+    }
+};
+
+// CHANGE DOSSIER STATUS & ADD INTERVENANT
+exports.changeDossierStatus = async (req, res) => {
+    try {
+        const { code_dossier, nouveau_statut, intervenant_id, role } = req.body;
+
+        const dossier = await Dossier.findOne({ code_dossier: code_dossier });
+        if (!dossier) {
+            return res.status(404).json({ 
+                status: false,
+                message: 'Dossier non trouvé.',
+                data: {}
+            });
+        }
+
+        const etat = await EtatDossier.findOne({ code: nouveau_statut });
+        if (!etat) {
+            return res.status(400).json({
+                status: false,
+                message: "L'état spécifié n'existe pas.",
+                data: {}
+            });
+        }
+
+        dossier.etat_dossier = nouveau_statut;
+
+        if (intervenant_id && role) {
+            // Ajouter le nouvel intervenant (vérifier s'il n'existe pas déjà pour ce rôle)
+            const exists = dossier.intervenants.find(i => i.role === role && i.utilisateur.toString() === intervenant_id);
+            if (!exists) {
+                dossier.intervenants.push({
+                    role: role,
+                    utilisateur: intervenant_id,
+                    date_assignation: new Date()
+                });
+            }
+        }
+
+        await dossier.save();
+        await dossier.populate(['client', 'expediteur', 'intervenants.utilisateur']);
+
+        // --- AUDIT ---
+        await logAction(req, 'UPDATE', 'DOSSIER_STATUS', { 
+            num_dossier: dossier.num_dossier, 
+            nouveau_statut,
+            intervenant_id,
+            role
+        });
+
+        res.status(200).json({
+            status: true,
+            message: 'Statut du dossier mis à jour avec succès.',
+            data: dossier.formatResponse(),
+        });
+
+    } catch (error) {
+        res.status(500).json({ 
+            status: false,
+            message: error.message || 'Une erreur interne est survenue.',
+            data: {}
         });
     }
 };

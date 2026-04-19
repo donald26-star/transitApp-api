@@ -184,6 +184,12 @@ const dossierSchema = new mongoose.Schema({
         default: '0', 
         enum: ["0", "1"] 
     },
+    etat_dossier: { type: String, trim: true }, // Code de l'état (ex: OUVERT, AFFECTE)
+    intervenants: [{
+        role: { type: String }, // Code du rôle (ex: OUVREUR, DECLARANT)
+        utilisateur: { type: mongoose.Schema.Types.ObjectId, ref: 'acl_administrateurs' },
+        date_assignation: { type: Date, default: Date.now }
+    }],
     code_dossier: {
         type: String,
         unique: true,

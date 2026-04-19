@@ -1,0 +1,27 @@
+1- Ouvreur de dossiers
+C'est le premier bureau qui reçoit le client, l'importateur ou l'exportateur avec les documents de son opération. Il est chargé de vérifier la conformité des documents du client. Après vérification, il delivre un ordre du transit (OT) au client qui signe conjointement avec lui.
+Ensuite, il enregistre le dossier dans un répertoire et le transmet au chef transit.
+2- Le chef transit
+C'est le responsable de toutes les opérations transit au sein de l'entreprise. Il doit maitriser la règlementation douanière en côte d'ivoire. Il n'a pas droit à l'erreur car une erreur en douanes entraine le paiement des amendes et des frais complémentaires. Car ces amendes ne peuvent être facturées aux clients.
+Donc il analyse à fond les documents reçus et les confie à un déclarant pour établir la déclaration en détail.
+3- Le déclarant en douane
+Celui-ci prend son temps pour analyser les documents reçus. Il doit s'assurer que tous les documents sont conformes à l'opération du client. Alors, il codifie la déclaration en détail en renseignant la minute douane ou l'état de codage. Il le transmet au chef transit pour contrôle et vérification.
+4- L'opérateur de saisi
+Le chef de transit, après vérification, transmet le dossier à l'opérateur ou l'opératrice de saisie en vue d'enregistrer les données de l'état de codage dans le Système de dédouanement automatisé des marchandises (SYDAM) ou sur le site du Guichet Unique du Commerce Extérieur (GUCE). Il élabore une édition de contrôle et le transmet au chef de transit pour accord ou approbation. Celui-ci vérifie encore les informations de la déclaration et donne son par en a intraiter pour encore inde let en depil Apres vilet signade la.
+5-Le passeur en douanes
+Il reçoit le dossier des mains du chef transit. A son niveau, il effectue un contrôle, fait les copies des documents et de la déclaration en détail en vue de les introduire en douane au bureau compétant pour le régime assigné à la marchandise.
+6-
+L'enleveur ou le passeur dans les compagnies.
+Il est chargé de prendre les montants des frais portuaires dans les compagnies munies du B/L. ou de la LTA. Après la validation de la déclaration en détail, il fait les copies des documents et se dirige vers les compagnies (les acconiers, les consignataires et manutentionnaires pour payer les frais d'acconage, d'échange de B/L, les taxes de port ou la redevance sur marchandise, la caution des conteneurs, la livraison ainsi que les autres frais afférents.
+7- Le livreur
+Muni du bon à enlever douane en dégroupage, se rend au magasin du dégroupeur pour payer les frais d'acconage et s'il y a lieu les frais de magasinage en vue de livrer les marchandises.
+Au cas ou les marchandises sont en conteneur, il est en contact avec le service manutention de consignataire de la marchandise pour suivre la livraison.
+Après la livraison des colis, le passeur en douane va chercher les douaniers pour assister au dépotage desdits conteneurs. S'il n'y a pas d'anomalies signalées par les agents de visite des douanes, alors un rapport de visite est donné à l'inspecteur en charge du dossier. Celui-ci délivre un bon à enlever qui concède le droit d'utiliser la marchandise.
+8- Le service facturation
+Après l'obtention du bon à enlever (BAE) de la douane, le dossier est transmis au facturier pour éditer sa facture. Son travail consiste à énumérer toutes les dépenses effectuées au cours de l'opération et d'adresser la facture au client pour paiement.
+9- Le service recouvrement
+Après l'édition de la facture des débours, le service de recouvrement transmet la facture au client pour paiement.
+
+NB :
+*son accord par écrit…
+*de la déclaration en détails …
