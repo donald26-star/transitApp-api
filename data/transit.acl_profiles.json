@@ -24,25 +24,217 @@
 },
 {
   "_id": {
-    "$oid": "69b7ba6798596c18f01cc470"
+    "$oid": "69e532fa08c18083290073b8"
   },
-  "designation": "admin",
-  "actions": [
-    "add, edit, delete"
-  ],
+  "designation": "administrateur",
   "visibilite": [
-    "PZ6ds3p9VjVpE8kN, hH0z9FULqQUACVvl"
+    "*"
   ],
   "type_accueil": "*",
-  "bloc_visible": [],
+  "bloc_visible": [
+    "*"
+  ],
+  "code_profile": "SUPER_ADMIN",
+  "commentaire": "Accès total sans limite",
   "status": "1",
   "corbeille": "0",
-  "code_profile": "hH0z9FULqQUACVvl",
   "createdAt": {
-    "$date": "2026-03-16T08:08:07.169Z"
+    "$date": "2026-04-19T19:54:34.041Z"
   },
   "updatedAt": {
-    "$date": "2026-03-16T09:19:36.856Z"
+    "$date": "2026-04-19T20:00:55.951Z"
   },
-  "__v": 1
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e532fa08c18083290073bb"
+  },
+  "designation": "ouvreur de dossier",
+  "visibilite": [
+    "*"
+  ],
+  "type_accueil": "*",
+  "bloc_visible": [
+    "*"
+  ],
+  "code_profile": "OUVREUR",
+  "commentaire": "Reçoit le client et crée le dossier",
+  "status": "1",
+  "corbeille": "0",
+  "createdAt": {
+    "$date": "2026-04-19T19:54:34.062Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-19T19:54:34.062Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e532fa08c18083290073be"
+  },
+  "designation": "chef de transit",
+  "visibilite": [
+    "*"
+  ],
+  "type_accueil": "*",
+  "bloc_visible": [
+    "*"
+  ],
+  "code_profile": "CHEF_TRANSIT",
+  "commentaire": "Supervise et valide les dossiers",
+  "status": "1",
+  "corbeille": "0",
+  "createdAt": {
+    "$date": "2026-04-19T19:54:34.065Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-19T19:54:34.065Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e532fa08c18083290073c1"
+  },
+  "designation": "déclarant en douane",
+  "visibilite": [
+    "*"
+  ],
+  "type_accueil": "*",
+  "bloc_visible": [
+    "*"
+  ],
+  "code_profile": "DECLARANT",
+  "commentaire": "Établit la déclaration en détail",
+  "status": "1",
+  "corbeille": "0",
+  "createdAt": {
+    "$date": "2026-04-19T19:54:34.068Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-19T19:54:34.068Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e532fa08c18083290073c4"
+  },
+  "designation": "assistant déclarant",
+  "visibilite": [
+    "*"
+  ],
+  "type_accueil": "*",
+  "bloc_visible": [
+    "*"
+  ],
+  "code_profile": "ASSISTANT_DECLARANT",
+  "commentaire": "Aide le déclarant",
+  "status": "1",
+  "corbeille": "0",
+  "createdAt": {
+    "$date": "2026-04-19T19:54:34.072Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-19T19:54:34.072Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e532fa08c18083290073c7"
+  },
+  "designation": "opérateur de saisie",
+  "visibilite": [
+    "*"
+  ],
+  "type_accueil": "*",
+  "bloc_visible": [
+    "*"
+  ],
+  "code_profile": "OPERATEUR_SAISIE",
+  "commentaire": "Enregistre les données SYDAM/GUCE",
+  "status": "1",
+  "corbeille": "0",
+  "createdAt": {
+    "$date": "2026-04-19T19:54:34.075Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-19T19:54:34.075Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e532fa08c18083290073ca"
+  },
+  "designation": "passeur en douane",
+  "visibilite": [
+    "*"
+  ],
+  "type_accueil": "*",
+  "bloc_visible": [
+    "*"
+  ],
+  "code_profile": "PASSEUR_DOUANE",
+  "commentaire": "Introduit le dossier en douane",
+  "status": "1",
+  "corbeille": "0",
+  "createdAt": {
+    "$date": "2026-04-19T19:54:34.078Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-19T19:54:34.078Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e532fa08c18083290073cd"
+  },
+  "designation": "service facturation",
+  "visibilite": [
+    "*"
+  ],
+  "type_accueil": "*",
+  "bloc_visible": [
+    "*"
+  ],
+  "code_profile": "FACTURATION",
+  "commentaire": "Édite les factures des débours",
+  "status": "1",
+  "corbeille": "0",
+  "createdAt": {
+    "$date": "2026-04-19T19:54:34.080Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-19T19:54:34.080Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e532fa08c18083290073d0"
+  },
+  "designation": "livreur",
+  "visibilite": [
+    "*"
+  ],
+  "type_accueil": "*",
+  "bloc_visible": [
+    "*"
+  ],
+  "code_profile": "LIVREUR",
+  "commentaire": "Livre les marchandises",
+  "status": "1",
+  "corbeille": "0",
+  "createdAt": {
+    "$date": "2026-04-19T19:54:34.083Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-19T19:54:34.083Z"
+  },
+  "__v": 0
 }]
