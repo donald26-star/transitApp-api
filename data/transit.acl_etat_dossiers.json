@@ -1,0 +1,159 @@
+[{
+  "_id": {
+    "$oid": "69e532fa08c18083290073d3"
+  },
+  "label": "Ouvert",
+  "code": "OUVERT",
+  "couleur": "#10B981",
+  "ordre": 1,
+  "roles_autorises": [
+    "OUVREUR",
+    "CHEF_TRANSIT",
+    "SUPER_ADMIN"
+  ],
+  "role_suivant": "CHEF_TRANSIT",
+  "status": "1",
+  "createdAt": {
+    "$date": "2026-04-19T19:54:34.086Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-19T19:54:34.086Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e532fa08c18083290073d6"
+  },
+  "label": "Affecté au Déclarant",
+  "code": "AFFECTE_DECLARANT",
+  "couleur": "#3B82F6",
+  "ordre": 2,
+  "roles_autorises": [
+    "CHEF_TRANSIT",
+    "DECLARANT",
+    "SUPER_ADMIN"
+  ],
+  "role_suivant": "DECLARANT",
+  "status": "1",
+  "createdAt": {
+    "$date": "2026-04-19T19:54:34.089Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-19T19:54:34.089Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e532fa08c18083290073d9"
+  },
+  "label": "En Saisie",
+  "code": "AFFECTE_SAISIE",
+  "couleur": "#8B5CF6",
+  "ordre": 3,
+  "roles_autorises": [
+    "CHEF_TRANSIT",
+    "OPERATEUR_SAISIE",
+    "SUPER_ADMIN"
+  ],
+  "role_suivant": "OPERATEUR_SAISIE",
+  "status": "1",
+  "createdAt": {
+    "$date": "2026-04-19T19:54:34.091Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-19T19:54:34.091Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e532fa08c18083290073dc"
+  },
+  "label": "En Douane",
+  "code": "EN_DOUANE",
+  "couleur": "#F59E0B",
+  "ordre": 4,
+  "roles_autorises": [
+    "CHEF_TRANSIT",
+    "PASSEUR_DOUANE",
+    "SUPER_ADMIN"
+  ],
+  "role_suivant": "PASSEUR_DOUANE",
+  "status": "1",
+  "createdAt": {
+    "$date": "2026-04-19T19:54:34.094Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-19T19:54:34.094Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e532fa08c18083290073df"
+  },
+  "label": "En Facturation",
+  "code": "A_FACTURER",
+  "couleur": "#EC4899",
+  "ordre": 5,
+  "roles_autorises": [
+    "CHEF_TRANSIT",
+    "FACTURATION",
+    "SUPER_ADMIN"
+  ],
+  "role_suivant": "FACTURATION",
+  "status": "1",
+  "createdAt": {
+    "$date": "2026-04-19T19:54:34.096Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-19T19:54:34.096Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e532fa08c18083290073e2"
+  },
+  "label": "En Livraison",
+  "code": "A_LIVRER",
+  "couleur": "#06B6D4",
+  "ordre": 6,
+  "roles_autorises": [
+    "CHEF_TRANSIT",
+    "LIVREUR",
+    "SUPER_ADMIN"
+  ],
+  "role_suivant": "LIVREUR",
+  "status": "1",
+  "createdAt": {
+    "$date": "2026-04-19T19:54:34.098Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-19T19:54:34.098Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e532fa08c18083290073e5"
+  },
+  "label": "Terminé",
+  "code": "TERMINE",
+  "couleur": "#6B7280",
+  "ordre": 7,
+  "roles_autorises": [
+    "*"
+  ],
+  "role_suivant": null,
+  "status": "1",
+  "createdAt": {
+    "$date": "2026-04-19T19:54:34.100Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-19T19:54:34.100Z"
+  },
+  "__v": 0
+}]
