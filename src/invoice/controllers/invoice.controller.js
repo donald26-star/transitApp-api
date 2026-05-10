@@ -394,3 +394,49 @@ exports.sendInvoiceEmail = async (req, res) => {
         res.status(500).json({ status: false, message: error.message });
     }
 };
+
+// TRASH INVOICE (Soft Delete)
+exports.trashInvoice = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const invoice = await Invoice.findByIdAndUpdate(id, { corbeille: '1' }, { new: true });
+        if (!invoice) return res.status(404).json({ status: false, message: "Facture non trouvée" });
+        res.status(200).json({ status: true, message: "Facture mise dans la corbeille", data: invoice });
+    } catch (error) {
+        res.status(500).json({ status: false, message: error.message });
+    }
+};
+
+// RESTORE INVOICE FROM TRASH
+exports.restoreInvoice = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const invoice = await Invoice.findByIdAndUpdate(id, { corbeille: '0' }, { new: true });
+        if (!invoice) return res.status(404).json({ status: false, message: "Facture non trouvée" });
+        res.status(200).json({ status: true, message: "Facture restaurée avec succès", data: invoice });
+    } catch (error) {
+        res.status(500).json({ status: false, message: error.message });
+    }
+};
+
+// HARD DELETE INVOICE
+exports.hardDeleteInvoice = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const invoice = await Invoice.findByIdAndDelete(id);
+        if (!invoice) return res.status(404).json({ status: false, message: "Facture non trouvée" });
+        res.status(200).json({ status: true, message: "Facture supprimée définitivement" });
+    } catch (error) {
+        res.status(500).json({ status: false, message: error.message });
+    }
+};
+
+// GET INVOICE TRASH LIST
+exports.getInvoicesTrash = async (req, res) => {
+    try {
+        const invoices = await Invoice.find({ corbeille: '1' }).sort({ updatedAt: -1 });
+        res.status(200).json({ status: true, data: invoices });
+    } catch (error) {
+        res.status(500).json({ status: false, message: error.message });
+    }
+};

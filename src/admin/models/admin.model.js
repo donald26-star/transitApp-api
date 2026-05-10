@@ -13,7 +13,6 @@ const administrateurSchema = new mongoose.Schema({
     },
     genre: { type: String, required: true,enum: ["Masculin", "Feminin"] },
     telephone: { 
-        unique: true,
         type: String, 
         required: true, 
         match: /^\+?[0-9]{1,4}\s?[0-9]{6,15}$/  // Validation pour le format de numéro de téléphone
@@ -94,12 +93,25 @@ administrateurSchema.methods.formatResponse = async function () {
     return adminData;
 };
 
+// Index unique pour l'email, seulement pour les comptes ACTIFS (pas dans la corbeille)
 administrateurSchema.index(
     { email: 1 }, 
     { 
         unique: true, 
         partialFilterExpression: { 
-            email: { $type: "string", $gt: "" } // L'unicité ne s'applique que si c'est un string non vide
+            corbeille: "0",
+            email: { $type: "string", $gt: "" }
+        } 
+    }
+);
+
+// Index unique pour le téléphone, seulement pour les comptes ACTIFS
+administrateurSchema.index(
+    { telephone: 1 }, 
+    { 
+        unique: true, 
+        partialFilterExpression: { 
+            corbeille: "0"
         } 
     }
 );

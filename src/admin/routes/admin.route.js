@@ -1,6 +1,10 @@
 const express = require('express');
 const multer = require('multer');
-const { registerUser, loginUser, updateAccompteUser, getAdminList, getUserInfo, updateUserProfile, deleteAdmin, getAuditLogs } = require('../controllers/admin.controller');
+const { 
+    registerUser, loginUser, updateAccompteUser, getAdminList, 
+    getUserInfo, updateUserProfile, deleteAdmin, getAuditLogs,
+    getAdminCorbeille, restoreAdmin, hardDeleteAdmin 
+} = require('../controllers/admin.controller');
 const { verifyJWT } = require('../../../middlewares/jwtMiddleware');
 const router = express.Router();
 
@@ -19,7 +23,10 @@ router.get('/v1/user/:token', getUserInfo);
 router.get('/v1/admin', getAdminList); 
 router.put('/v1/update/compte', updateAccompteUser); // MISE A JOUR ADMINISTRATEUR
 router.put('/v1/update/profile/:token', upload.single('photo_profile'), updateUserProfile); // MISE A JOUR PHOTO_PROFILE
-router.delete('/v1/admin/:token', deleteAdmin); // SUPPRESSION ADMINISTRATEUR
+router.delete('/v1/admin/:token', deleteAdmin); // SUPPRESSION ADMINISTRATEUR (SOFT)
+router.get('/v1/admin-corbeille', getAdminCorbeille);
+router.put('/v1/admin-restore/:token', restoreAdmin);
+router.delete('/v1/admin-hard/:token', hardDeleteAdmin);
 router.get('/v1/audit', getAuditLogs); // RÉCUPÉRATION DES LOGS D'AUDIT
 
 

@@ -14,8 +14,10 @@ router.get('/regimes', dossierController.getRegimes);
 router.put('/update', dossierController.updateDossier);
 router.put('/update-operation', dossierController.updateOperation);
 router.delete('/delete/:code_dossier', dossierController.deleteDossier);
+router.get('/next-number', dossierController.getNextDossierNumber);
 router.get('/corbeille', dossierController.getDossiersCorbeille);
 router.put('/restore/:code_dossier', dossierController.restoreDossier);
+router.delete('/hard-delete/:code_dossier', dossierController.hardDeleteDossier);
 
 // WORKFLOW & ETATS
 router.get('/etat-dossiers', dossierController.getEtatDossiers);

@@ -36,7 +36,10 @@ const dossierSchema = new mongoose.Schema({
         date: { type: Date, default: Date.now },
         commentaire: String
     }],
-    destinataire: { type: String, trim: true },
+    destinataire: { 
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: 'acl_destinataires'
+    },
     valeur: { type: Number, default: 0 },
     devise: { type: String, default: "USD", trim: true },
     valeur_cfa: { type: Number, default: 0 },

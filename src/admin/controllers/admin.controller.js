@@ -11,12 +11,33 @@ exports.registerUser = async (req, res) => {
     try {
         const { nom, email, password, telephone, genre, type_compte, profile  } = req.body;
 
-        const existingUser = await Administrateur.findOne({ email: email, corbeille: '0' });
+        const existingUser = await Administrateur.findOne({ 
+            $or: [{ email }, { telephone }], 
+            corbeille: '0' 
+        });
         if (existingUser) {
-            return res.status(400).json({ message: 'Cet utilisateur existe déjà.' });
+            return res.status(400).json({ 
+                status: false,
+                message: existingUser.email === email 
+                    ? 'Cette adresse email est déjà utilisée.' 
+                    : 'Ce numéro de téléphone est déjà utilisé.' 
+            });
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
+        
+        // Bloquer la création d'un super-admin si le créateur n'en est pas un
+        if (profile === 'super-admin' || profile === 'SUPER_ADMIN') {
+             // On suppose ici que le code_profile est 'super-admin'. 
+             // Mais attention, on vérifie req.user.profileName
+             if (req.user?.profileName !== 'super-admin') {
+                return res.status(403).json({ 
+                    status: false, 
+                    message: "Action refusée : Seul un Super Administrateur peut en créer un autre." 
+                });
+             }
+        }
+
         const user = new Administrateur({ nom, email, password: hashedPassword, telephone, genre, type_compte, profile });
 
         await user.save();
@@ -207,21 +228,46 @@ exports.updateAccompteUser = async (req, res) => {
         if (nom) user.nom = nom;
         if (genre) user.genre = genre;
         if (telephone) user.telephone = telephone;
-        if (profile) user.profile = profile;
+        
+        if (profile) {
+            // Bloquer le changement vers super-admin si le demandeur n'en est pas un
+            // On récupère le nom du profil cible
+            const { fetchOneValue } = require('../../../services/requetes');
+            const targetProfileName = await fetchOneValue({ code_profile: profile }, 'designation', 'acl_profiles');
+            
+            if (targetProfileName === 'super-admin' && req.user?.profileName !== 'super-admin') {
+                return res.status(403).json({
+                    status: false,
+                    message: "Action refusée : Vous ne pouvez pas promouvoir un compte au rang de Super Administrateur."
+                });
+            }
+            user.profile = profile;
+        }
+
         if (type_compte) user.type_compte = type_compte;
         if (status) user.status = status;
 
-        if (email) {
-            // Vérifier si l'email est déjà utilisé par un autre utilisateur
-            const existingUser = await Administrateur.findOne({ email : email, token: { $ne: token } });
+        if (email || telephone) {
+            const query = { 
+                $or: [],
+                token: { $ne: token },
+                corbeille: '0'
+            };
+            if (email) query.$or.push({ email });
+            if (telephone) query.$or.push({ telephone });
+
+            const existingUser = await Administrateur.findOne(query);
             if (existingUser) {
                 return res.status(400).json({ 
                     status: false,
-                    message: 'Cette adresse mail est déjà utilisée par un autre utilisateur.',
+                    message: existingUser.email === email 
+                        ? 'Cette adresse mail est déjà utilisée par un autre utilisateur.' 
+                        : 'Ce numéro de téléphone est déjà utilisé par un autre utilisateur.',
                     data: {}
                 });
             }
-            user.email = email;
+            if (email) user.email = email;
+            if (telephone) user.telephone = telephone;
         }
 
         // Si un nouveau mot de passe est fourni, le hacher
@@ -355,6 +401,19 @@ exports.deleteAdmin = async (req, res) => {
             });
         }
 
+        // Vérifier le profil de l'utilisateur à supprimer
+        const userFormatted = await user.formatResponse();
+        if (userFormatted.profileName === 'super-admin') {
+            // Seul un super-admin peut potentiellement en supprimer un autre (ou personne ne peut supprimer le super-admin)
+            // Ici, on bloque si celui qui supprime n'est pas lui-même super-admin
+            if (req.user.profileName !== 'super-admin') {
+                return res.status(403).json({
+                    status: false,
+                    message: "Action refusée : Vous ne pouvez pas supprimer un Super Administrateur."
+                });
+            }
+        }
+
         //Mettre le compte dans la corbeille
         user.corbeille = "1";
 
@@ -402,6 +461,69 @@ exports.getAuditLogs = async (req, res) => {
             message: error.message || 'Une erreur interne est survenue.',
             data: []
         });
+    }
+};
+
+// LISTE DES ADMINISTRATEURS DANS LA CORBEILLE
+exports.getAdminCorbeille = async (req, res) => {
+    try {
+        const administrateurs = await Administrateur.find({ corbeille: "1" });
+        const administrateurResponse = await Promise.all(
+            administrateurs.map(async (administrateur, index) => {
+                const formattedResponse = await administrateur.formatResponse();
+                return {
+                    ...formattedResponse,
+                    position: index + 1
+                };
+            })
+        );
+
+        res.status(200).json({ status: true, data: administrateurResponse });
+    } catch (error) {
+        res.status(500).json({ status: false, message: error.message });
+    }
+};
+
+// RESTAURER UN ADMINISTRATEUR
+exports.restoreAdmin = async (req, res) => {
+    try {
+        const { token } = req.params;
+        const user = await Administrateur.findOne({ token });
+        if (!user) return res.status(404).json({ status: false, message: "Administrateur non trouvé" });
+
+        user.corbeille = "0";
+        await user.save();
+
+        // --- AUDIT ---
+        await logAction(req, 'RESTORE', 'ADMIN', { admin_nom: user.nom });
+
+        res.status(200).json({ status: true, message: "Compte restauré avec succès" });
+    } catch (error) {
+        res.status(500).json({ status: false, message: error.message });
+    }
+};
+
+// SUPPRESSION DÉFINITIVE
+exports.hardDeleteAdmin = async (req, res) => {
+    try {
+        const { token } = req.params;
+        const user = await Administrateur.findOne({ token });
+        if (!user) return res.status(404).json({ status: false, message: "Administrateur non trouvé" });
+
+        // Bloquer si c'est un super-admin
+        const userFormatted = await user.formatResponse();
+        if (userFormatted.profileName === 'super-admin' && req.user.profileName !== 'super-admin') {
+            return res.status(403).json({ status: false, message: "Action refusée : Seul un Super Administrateur peut supprimer définitivement un autre Super Administrateur." });
+        }
+
+        await Administrateur.deleteOne({ token });
+
+        // --- AUDIT ---
+        await logAction(req, 'HARD_DELETE', 'ADMIN', { admin_nom: user.nom });
+
+        res.status(200).json({ status: true, message: "Compte supprimé définitivement" });
+    } catch (error) {
+        res.status(500).json({ status: false, message: error.message });
     }
 };
 

@@ -58,7 +58,7 @@ exports.registerDossier = async (req, res) => {
 
         const dossier = new Dossier(dossierData);
         await dossier.save();
-        await dossier.populate(['client', 'expediteur', 'intervenants.utilisateur', 'statut_history.utilisateur']);
+        await dossier.populate(['client', 'expediteur', 'destinataire', 'intervenants.utilisateur', 'statut_history.utilisateur']);
 
         // --- AUDIT ---
         await logAction(req, 'CREATE', 'DOSSIER', { 
@@ -102,7 +102,7 @@ exports.getDossierInfo = async (req, res) => {
     try {
         const code_dossier = req.params.code_dossier;
 
-        const dossier = await Dossier.findOne({ code_dossier: code_dossier }).populate(['client', 'expediteur', 'intervenants.utilisateur', 'statut_history.utilisateur']);
+        const dossier = await Dossier.findOne({ code_dossier: code_dossier }).populate(['client', 'expediteur', 'destinataire', 'intervenants.utilisateur', 'statut_history.utilisateur']);
         if (!dossier) {
             return res.status(404).json({ 
                 status: false,
@@ -145,7 +145,7 @@ exports.getDossierListe = async (req, res) => {
             }
         }
 
-        const dossiers = await Dossier.find(filter).populate(['client', 'expediteur', 'intervenants.utilisateur', 'statut_history.utilisateur']).sort({ createdAt: -1 });
+        const dossiers = await Dossier.find(filter).populate(['client', 'expediteur', 'destinataire', 'intervenants.utilisateur', 'statut_history.utilisateur']).sort({ createdAt: -1 });
 
         const formattedDossiers = dossiers.map((d, index) => ({
             ...d.formatResponse(),
@@ -204,7 +204,7 @@ exports.updateDossier = async (req, res) => {
         }
 
         await dossier.save();
-        await dossier.populate(['client', 'expediteur']);
+        await dossier.populate(['client', 'expediteur', 'destinataire']);
 
         // --- AUDIT ---
         await logAction(req, 'UPDATE', 'DOSSIER', { 
@@ -280,7 +280,7 @@ exports.deleteDossier = async (req, res) => {
 // GET DOSSIERS IN CORBEILLE
 exports.getDossiersCorbeille = async (req, res) => {
     try {
-        const dossiers = await Dossier.find({ corbeille: '1' }).populate(['client', 'expediteur']).sort({ updatedAt: -1 });
+        const dossiers = await Dossier.find({ corbeille: '1' }).populate(['client', 'expediteur', 'destinataire']).sort({ updatedAt: -1 });
 
         const formattedDossiers = dossiers.map((d, index) => ({
             ...d.formatResponse(),
@@ -334,6 +334,28 @@ exports.restoreDossier = async (req, res) => {
         });
     }
 };
+
+// HARD DELETE DOSSIER
+exports.hardDeleteDossier = async (req, res) => {
+    try {
+        const code_dossier = req.params.code_dossier;
+        const dossier = await Dossier.findOne({ code_dossier: code_dossier });
+        if (!dossier) return res.status(404).json({ status: false, message: 'Dossier non trouvé.' });
+
+        await Dossier.deleteOne({ code_dossier: code_dossier });
+
+        // --- AUDIT ---
+        // if logAction is defined (check if it is)
+        if (typeof logAction !== 'undefined') {
+            await logAction(req, 'HARD_DELETE', 'DOSSIER', { num_dossier: dossier.num_dossier });
+        }
+
+        res.status(200).json({ status: true, message: 'Dossier supprimé définitivement.' });
+    } catch (error) {
+        res.status(500).json({ status: false, message: error.message });
+    }
+};
+
 // UPDATE OPERATION (FICHE OPÉRATRICE / ÉTAT DE CODAGE)
 exports.updateOperation = async (req, res) => {
     try {
@@ -593,7 +615,7 @@ exports.changeDossierStatus = async (req, res) => {
         }
 
         await dossier.save();
-        await dossier.populate(['client', 'expediteur', 'intervenants.utilisateur', 'statut_history.utilisateur']);
+        await dossier.populate(['client', 'expediteur', 'destinataire', 'intervenants.utilisateur', 'statut_history.utilisateur']);
 
         // --- AUDIT ---
         await logAction(req, 'UPDATE', 'DOSSIER_STATUS', { 
@@ -650,5 +672,47 @@ exports.removeIntervenant = async (req, res) => {
         });
     } catch (error) {
         res.status(500).json({ status: false, message: error.message });
+    }
+};
+
+// GET NEXT DOSSIER NUMBER (Format: GLSI-0001-2026)
+exports.getNextDossierNumber = async (req, res) => {
+    try {
+        const year = new Date().getFullYear();
+        const prefix = "GLSI-";
+        const suffix = `-${year}`;
+        
+        // Regex pour matcher le format GLSI-XXXX-YEAR
+        const regex = new RegExp(`^${prefix}\\d{4}${suffix}$`);
+        
+        const lastDossier = await Dossier.findOne({ num_dossier: regex })
+            .sort({ num_dossier: -1 })
+            .exec();
+
+        let nextNumber = 1;
+        if (lastDossier && lastDossier.num_dossier) {
+            const parts = lastDossier.num_dossier.split('-');
+            if (parts.length === 3) {
+                const lastNum = parseInt(parts[1], 10);
+                if (!isNaN(lastNum)) {
+                    nextNumber = lastNum + 1;
+                }
+            }
+        }
+
+        const formattedNumber = String(nextNumber).padStart(4, '0');
+        const nextDossierNumber = `${prefix}${formattedNumber}${suffix}`;
+
+        res.status(200).json({
+            status: true,
+            message: 'Succès.',
+            data: nextDossierNumber
+        });
+    } catch (error) {
+        res.status(500).json({ 
+            status: false,
+            message: error.message || 'Une erreur interne est survenue.',
+            data: null
+        });
     }
 };
