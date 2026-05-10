@@ -6,6 +6,7 @@ const etatDossierSchema = new mongoose.Schema({
     couleur: { type: String, default: "#CCCCCC" }, // badge color
     ordre: { type: Number, default: 0 }, // For ordering the workflow steps
     roles_autorises: [{ type: String }], // Which roles can act/see on this status, or ["*"] for all
+    actions_autorisees: [{ type: String }], // Allowed buttons: ["suivi_admin", "exporter", "codage", "facturation", "editer"]
     role_suivant: { type: String }, // Role that should handle the dossier next
     status: { type: String, default: '1', enum: ["0", "1", "-1"] }
 }, {
